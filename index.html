@@ -5,504 +5,258 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>NEED4LED // UNDERGLOW OS</title>
-  <style>
-    :root {
-      --bg: #030712;
-      --card-bg: rgba(17, 24, 39, 0.7);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --neon-cyan: #00F0FF;
-      --neon-red: #FF0055;
-      --neon-purple: #B026FF;
-      --text: #F9FAFB;
-      --text-muted: #9CA3AF;
-      --radius: 18px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px;
-      overflow-x: hidden;
-    }
-
-    header {
-      padding: 16px 8px 12px 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .brand {
-      font-size: 1.5rem;
-      font-weight: 900;
-      letter-spacing: 2px;
-      color: #FFF;
-      text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-    }
-
-    .brand span {
-      color: var(--neon-cyan);
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #4B5563;
-    }
-
-    .dot.online {
-      background: #10B981;
-      box-shadow: 0 0 8px #10B981;
-    }
-
-    .glass-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: var(--radius);
-      padding: 18px;
-      margin-bottom: 14px;
-    }
-
-    .card-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 14px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .btn-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 14px;
-      padding: 16px;
-      font-size: 0.95rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: all 0.15s ease;
-      color: #FFF;
-    }
-
-    .btn:active {
-      transform: scale(0.96);
-      opacity: 0.85;
-    }
-
-    .btn-connect {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.05));
-      border: 1px solid rgba(0, 240, 255, 0.4);
-      color: var(--neon-cyan);
-      width: 100%;
-    }
-
-    .btn-ignition {
-      background: linear-gradient(135deg, #059669, #10B981);
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-    }
-
-    .btn-killswitch {
-      background: linear-gradient(135deg, #DC2626, #EF4444);
-      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-    }
-
-    .presets-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    .preset-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 14px 6px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    .preset-pill {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .slider-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .slider-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      font-weight: 700;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--neon-cyan);
-      box-shadow: 0 0 10px var(--neon-cyan);
-      cursor: pointer;
-    }
-
-    .color-picker-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    input[type="color"] {
-      -webkit-appearance: none;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: none;
-      cursor: pointer;
-    }
-
-    input[type="color"]::-webkit-color-swatch-wrapper {
-      padding: 0;
-    }
-
-    input[type="color"]::-webkit-color-swatch {
-      border: none;
-      border-radius: 50%;
-    }
-
-    .console-box {
-      font-family: ui-monospace, Menlo, Monaco, monospace;
-      font-size: 0.7rem;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 10px;
-      height: 85px;
-      overflow-y: auto;
-      color: #10B981;
-    }
-
-    .protocol-select {
-      background: rgba(255, 255, 255, 0.08);
-      color: #FFF;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 4px 8px;
-      font-size: 0.7rem;
-      outline: none;
-    }
-  </style>
+  <meta name="apple-mobile-web-app-title" content="Need4Led">
+  <meta name="theme-color" content="#000000">
+  <title>Need4Led — Controllo Strisce Bluetooth</title>
+  
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-
-  <header>
-    <div class="brand">NEED<span>4LED</span></div>
-    <div class="status-badge">
-      <div class="dot" id="bleDot"></div>
-      <span id="bleStatus">OFFLINE</span>
-    </div>
-  </header>
-
-  <!-- SEZIONE LINK BLE -->
-  <div class="glass-card">
-    <div class="card-title">
-      <span>Link Centralina BLE</span>
-      <select class="protocol-select" id="protocolSelect">
-        <option value="lotus_a1">Lotus (A1: 7E 00)</option>
-        <option value="lotus_a2">Lotus (A2: 7E 04)</option>
-        <option value="triones">Triones (CC/56)</option>
-      </select>
-    </div>
-    <button class="btn btn-connect" id="btnScan" onclick="connectBLE()">
-      <span>SCANSIONA CENTRALINA MONOPATTINO</span>
-    </button>
+  <!-- Effetti di Luce Ambientale di Sfondo -->
+  <div class="ambient-glow">
+    <div class="glow-orb-top" id="ambientTop"></div>
+    <div class="glow-orb-bottom"></div>
   </div>
 
-  <!-- CONTROLLO ACCENSIONE -->
-  <div class="glass-card">
-    <div class="card-title">Launch Control</div>
-    <div class="btn-grid">
-      <button class="btn btn-ignition" onclick="sendPower(true)">
-        <span>IGNITION</span>
-        <small style="font-size:0.65rem; opacity:0.8;">ACCENDI</small>
-      </button>
-      <button class="btn btn-killswitch" onclick="sendPower(false)">
-        <span>KILL SWITCH</span>
-        <small style="font-size:0.65rem; opacity:0.8;">SPEGNI</small>
-      </button>
-    </div>
-  </div>
+  <!-- Toast Notifiche a Scomparsa Rapida -->
+  <div class="toast-notice" id="toastNotice">Messaggio</div>
 
-  <!-- ASSETTI RAPIDI -->
-  <div class="glass-card">
-    <div class="card-title">Assetti Luce Tattici</div>
-    <div class="presets-grid">
-      <button class="preset-btn" onclick="applyPreset('#FFFFFF', 100)">
-        <div class="preset-pill" style="background:#FFF;"></div>
-        <span>STRADA</span>
-      </button>
-      <button class="preset-btn" onclick="applyPreset('#FF0000', 100)">
-        <div class="preset-pill" style="background:#FF0000; box-shadow:0 0 8px #FF0000;"></div>
-        <span>STOP</span>
-      </button>
-      <button class="preset-btn" onclick="applyPreset('#00F0FF', 100)">
-        <div class="preset-pill" style="background:#00F0FF; box-shadow:0 0 8px #00F0FF;"></div>
-        <span>CYBER</span>
-      </button>
-      <button class="preset-btn" onclick="applyPreset('#B026FF', 100)">
-        <div class="preset-pill" style="background:#B026FF; box-shadow:0 0 8px #B026FF;"></div>
-        <span>VIOLA</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- COLORE E LUMINOSITÀ -->
-  <div class="glass-card">
-    <div class="card-title">Chroma Tuning & Potenza</div>
-    <div class="color-picker-wrapper" style="margin-bottom: 16px;">
-      <input type="color" id="colorPicker" value="#00F0FF" oninput="handleColorInput(this.value)">
-      <div style="font-size: 0.85rem; font-weight: 700;">
-        <span id="colorHex">#00F0FF</span>
-        <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">Selettore Tonalità RGB</div>
+  <!-- Viewport Applicazione (Safe-Area Aware) -->
+  <main class="app-viewport">
+    
+    <!-- Header Superiore -->
+    <header class="app-header">
+      <div style="display: flex; align-items: baseline;">
+        <h1 class="brand-title">Need4Led</h1>
+        <span class="brand-badge">PRO</span>
       </div>
-    </div>
-    <div class="slider-container">
-      <div class="slider-header">
-        <span style="color:var(--text-muted); font-size:0.75rem;">POTENZA FASCIO (DIMMER)</span>
-        <span id="brightVal" style="color:var(--neon-cyan);">100%</span>
+      <div class="header-actions">
+        <!-- Pulsante Apri Diagnostica & Protocolli -->
+        <button class="btn-icon-glass" id="btnOpenDiag" title="Diagnostica BLE & Protocolli" aria-label="Diagnostica BLE">
+          ⚡
+        </button>
       </div>
-      <input type="range" id="brightSlider" min="5" max="100" value="100" oninput="handleBrightness(this.value)">
+    </header>
+
+    <!-- Sezione Connessione Bluetooth -->
+    <section class="glass-card connection-panel">
+      <div class="status-row">
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusLabel">Non connesso</span>
+        </div>
+        <div class="device-details-text" id="deviceSummary">Nessun controller attivo</div>
+      </div>
+
+      <button class="btn-connect-primary" id="btnConnect">
+        <span id="connectIcon">🔗</span>
+        <span id="connectText">Connetti Strisce LED</span>
+      </button>
+    </section>
+
+    <!-- Sezione Alimentazione (ACCENDI / SPEGNI) -->
+    <section class="power-grid">
+      <button class="btn-power btn-power-on" id="btnPowerOn" aria-label="Accendi Luci">
+        <span class="power-label" style="color: var(--neon-green);">ACCENDI</span>
+        <span class="power-sub">Luci ON</span>
+      </button>
+      <button class="btn-power btn-power-off" id="btnPowerOff" aria-label="Spegni Luci">
+        <span class="power-label" style="color: var(--neon-red);">SPEGNI</span>
+        <span class="power-sub">Luci OFF</span>
+      </button>
+    </section>
+
+    <!-- Sezione Presets Rapidi (Sicurezza / Strada / Stile) -->
+    <section class="glass-card">
+      <div class="control-section-title">
+        <span>Preset Rapidi Monopattino</span>
+        <span style="font-size: 11px; color: var(--text-tertiary);">1-TOCCO</span>
+      </div>
+
+      <div class="presets-grid">
+        <!-- Preset Strada Bianco -->
+        <button class="preset-btn preset-white" data-preset="white">
+          <div class="preset-swatch"></div>
+          <div class="preset-info">
+            <span class="preset-name">Strada</span>
+            <span class="preset-desc">Bianco Visibilità</span>
+          </div>
+        </button>
+
+        <!-- Preset Stop Rosso -->
+        <button class="preset-btn preset-red" data-preset="red">
+          <div class="preset-swatch"></div>
+          <div class="preset-info">
+            <span class="preset-name">Stop</span>
+            <span class="preset-desc">Rosso Sicurezza</span>
+          </div>
+        </button>
+
+        <!-- Preset Cyber Ciano -->
+        <button class="preset-btn preset-cyan" data-preset="cyan">
+          <div class="preset-swatch"></div>
+          <div class="preset-info">
+            <span class="preset-name">Cyber Ciano</span>
+            <span class="preset-desc">Neon Futuristico</span>
+          </div>
+        </button>
+
+        <!-- Preset Neon Viola -->
+        <button class="preset-btn preset-purple" data-preset="purple">
+          <div class="preset-swatch"></div>
+          <div class="preset-info">
+            <span class="preset-name">Neon Viola</span>
+            <span class="preset-desc">Stile Notturno</span>
+          </div>
+        </button>
+
+        <!-- Preset Ambra Sicurezza -->
+        <button class="preset-btn preset-amber" data-preset="amber" style="grid-column: span 2;">
+          <div class="preset-swatch"></div>
+          <div class="preset-info">
+            <span class="preset-name">Ambra Sicurezza</span>
+            <span class="preset-desc">Attenzione / Nebbia / Pioggia</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- Sezione Regolazione Luminosità -->
+    <section class="glass-card">
+      <div class="control-section-title">
+        <span>Luminosità Striscia</span>
+        <span class="control-val-badge" id="brightnessValBadge">100%</span>
+      </div>
+
+      <div class="slider-container">
+        <span class="slider-icon">☼</span>
+        <input type="range" min="0" max="100" value="100" class="ios-slider" id="brightnessSlider" aria-label="Slider Luminosità">
+        <span class="slider-icon" style="font-size: 20px;">☀</span>
+      </div>
+    </section>
+
+    <!-- Sezione Colore RGB Personalizzato -->
+    <section class="glass-card">
+      <div class="control-section-title">
+        <span>Tonalità & Colore RGB</span>
+        <span class="color-hex-label" id="colorHexText">#00F0FF</span>
+      </div>
+
+      <div class="color-preview-bar">
+        <div class="color-indicator-circle" id="colorIndicatorCircle"></div>
+        <div style="flex: 1; margin-left: 8px;">
+          <div style="font-size: 13px; font-weight: 700;">Tonalità Attiva</div>
+          <div style="font-size: 11px; color: var(--text-tertiary);" id="rgbSummaryText">R: 0 | G: 240 | B: 255</div>
+        </div>
+        <label class="native-color-picker-btn">
+          <span>Palette</span>
+          <input type="color" id="nativeColorInput" value="#00F0FF">
+        </label>
+      </div>
+
+      <!-- Canali RGB Individuali per Regolazione Fine -->
+      <div class="rgb-channels-grid">
+        <div class="channel-row">
+          <span class="channel-label r">R</span>
+          <input type="range" min="0" max="255" value="0" class="channel-slider" id="sliderR">
+          <span class="channel-val" id="valR">0</span>
+        </div>
+        <div class="channel-row">
+          <span class="channel-label g">G</span>
+          <input type="range" min="0" max="255" value="240" class="channel-slider" id="sliderG">
+          <span class="channel-val" id="valG">240</span>
+        </div>
+        <div class="channel-row">
+          <span class="channel-label b">B</span>
+          <input type="range" min="0" max="255" value="255" class="channel-slider" id="sliderB">
+          <span class="channel-val" id="valB">255</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Drawer Modale di Diagnostica BLE & Protocol Switcher -->
+  <div class="diagnostic-drawer" id="diagDrawer">
+    <div class="diagnostic-content">
+      
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span>⚡</span>
+          <span>Diagnostica BLE & Protocolli</span>
+        </div>
+        <button class="btn-close-drawer" id="btnCloseDiag" aria-label="Chiudi Diagnostica">✕</button>
+      </div>
+
+      <div class="drawer-scroll-body">
+        
+        <!-- Scelta Protocollo Controller -->
+        <div class="diag-field-group">
+          <label class="diag-field-label" for="selectProtocol">Protocollo di Comunicazione</label>
+          <select class="diag-select" id="selectProtocol">
+            <option value="lotus_standard" selected>LotusLantern / ELK-BLEDOM (Standard 9-byte 0x7E)</option>
+            <option value="lotus_v2">LotusLantern Variante 2 (Index byte 0x04)</option>
+            <option value="triones">Triones / HappyLighting (Frame 0xCC / 0x56)</option>
+            <option value="raw">Personalizzato (Invio Raw Hex)</option>
+          </select>
+        </div>
+
+        <!-- Metodo Scrittura BLE -->
+        <div class="diag-field-group">
+          <label class="diag-field-label" for="selectWriteMode">Modalità di Scrittura GATT</label>
+          <select class="diag-select" id="selectWriteMode">
+            <option value="auto" selected>Auto (Consigliato: senza risposta per Lotus)</option>
+            <option value="withoutResponse">Forza writeWithoutResponse</option>
+            <option value="withResponse">Forza writeWithResponse</option>
+          </select>
+        </div>
+
+        <!-- Selettore Caratteristica Attiva -->
+        <div class="diag-field-group">
+          <label class="diag-field-label" for="selectCharUuid">Caratteristica GATT Attiva</label>
+          <select class="diag-select" id="selectCharUuid">
+            <option value="">In attesa di scansione dispositivo...</option>
+          </select>
+        </div>
+
+        <!-- Albero Servizi e Caratteristiche Rilevati -->
+        <div class="diag-field-group">
+          <label class="diag-field-label">GATT Explorer (Servizi & Proprietà)</label>
+          <div class="gatt-tree-list" id="gattTreeContainer">
+            <em>Nessun servizio rilevato. Connettiti al dispositivo per scansionare l'albero GATT.</em>
+          </div>
+        </div>
+
+        <!-- Invio Comando Hex Manuale -->
+        <div class="diag-field-group">
+          <label class="diag-field-label" for="inputRawHex">Invia Sequenza Esadecimale (Raw Hex)</label>
+          <div class="raw-send-row">
+            <input type="text" class="diag-input" id="inputRawHex" placeholder="es. 7E 00 04 F0 00 01 FF 00 EF">
+            <button class="btn-diag-send" id="btnSendRawHex">Invia</button>
+          </div>
+        </div>
+
+        <!-- Terminale Esadecimale Live -->
+        <div class="terminal-container">
+          <div class="terminal-header">
+            <span class="diag-field-label">Terminale Traffico BLE (TX / RX)</span>
+            <button class="btn-terminal-clear" id="btnClearLog">Pulisci Log</button>
+          </div>
+          <div class="terminal-window" id="termWindow">
+            <div class="term-entry">
+              <span class="term-time">[--:--:--]</span>
+              <span class="term-info">Inizializzazione Need4Led. Pronto alla scansione.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
-  <!-- CONSOLE DIAGNOSTICA -->
-  <div class="glass-card">
-    <div class="card-title">Telemetria & Log GATT</div>
-    <div class="console-box" id="logBox">Need4LED OS inizializzato. Pronto.</div>
-  </div>
-
-  <script>
-    let bleDevice = null;
-    let writeChar = null;
-    let lastSendTime = 0;
-    let currentColor = { r: 0, g: 240, b: 255 };
-    let currentBrightness = 1.0;
-
-    function log(msg) {
-      const box = document.getElementById('logBox');
-      const time = new Date().toLocaleTimeString().split(' ')[0];
-      box.innerHTML = `[${time}] ${msg}<br>` + box.innerHTML;
-    }
-
-    async function connectBLE() {
-      if (!navigator.bluetooth) {
-        log("ERRORE: Web Bluetooth non supportato su questo browser! Usa Bluefy su iPhone.");
-        return;
-      }
-
-      try {
-        log("Scansione dispositivi BLE nelle vicinanze...");
-        bleDevice = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [
-            '0000fff0-0000-1000-8000-00805f9b34fb', // LotusLantern A
-            '0000ffd5-0000-1000-8000-00805f9b34fb', // Triones B
-            '0000ffe5-0000-1000-8000-00805f9b34fb',
-            '0000ffe0-0000-1000-8000-00805f9b34fb'
-          ]
-        });
-
-        log(`Dispositivo selezionato: ${bleDevice.name || "Sconosciuto"}`);
-        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
-        log("Connessione al server GATT...");
-        const server = await bleDevice.gatt.connect();
-
-        log("Esplorazione servizi primari...");
-        const services = await server.getPrimaryServices();
-        let targetService = null;
-        let targetChar = null;
-
-        for (const s of services) {
-          const chars = await s.getCharacteristics();
-          for (const c of chars) {
-            if (c.properties.write || c.properties.writeWithoutResponse) {
-              targetService = s;
-              targetChar = c;
-              break;
-            }
-          }
-          if (targetChar) break;
-        }
-
-        if (!targetChar) {
-          throw new Error("Nessuna caratteristica di scrittura BLE individuata.");
-        }
-
-        writeChar = targetChar;
-        document.getElementById('bleDot').className = 'dot online';
-        document.getElementById('bleStatus').innerText = 'ONLINE';
-        document.getElementById('btnScan').innerText = `CONNESSO A: ${bleDevice.name || 'LED'}`;
-        log(`Pronto! Scrittura su: ${writeChar.uuid.substring(0, 8)}...`);
-
-      } catch (err) {
-        log(`Connessione fallita: ${err.message}`);
-      }
-    }
-
-    function onDisconnected() {
-      document.getElementById('bleDot').className = 'dot';
-      document.getElementById('bleStatus').innerText = 'OFFLINE';
-      document.getElementById('btnScan').innerText = 'RICONNETTI CENTRALINA';
-      log("ATTENZIONE: Dispositivo disconnesso.");
-      writeChar = null;
-    }
-
-    async function sendRawBytes(bytes) {
-      if (!writeChar) {
-        log("Dispositivo non connesso.");
-        return;
-      }
-      try {
-        const buffer = new Uint8Array(bytes);
-        if (writeChar.properties.writeWithoutResponse) {
-          await writeChar.writeValueWithoutResponse(buffer);
-        } else {
-          await writeChar.writeValue(buffer);
-        }
-      } catch (err) {
-        log(`Errore invio: ${err.message}`);
-      }
-    }
-
-    function sendPower(state) {
-      const proto = document.getElementById('protocolSelect').value;
-      let packet = [];
-
-      if (proto === 'lotus_a1') {
-        packet = state 
-          ? [0x7E, 0x00, 0x04, 0xF0, 0x00, 0x01, 0xFF, 0x00, 0xEF]
-          : [0x7E, 0x00, 0x04, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xEF];
-      } else if (proto === 'lotus_a2') {
-        packet = state 
-          ? [0x7E, 0x04, 0x04, 0xF0, 0x00, 0x01, 0xFF, 0x00, 0xEF]
-          : [0x7E, 0x04, 0x04, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xEF];
-      } else if (proto === 'triones') {
-        packet = state ? [0xCC, 0x23, 0x33] : [0xCC, 0x24, 0x33];
-      }
-
-      log(`Invio Power: ${state ? 'ON' : 'OFF'}`);
-      sendRawBytes(packet);
-    }
-
-    function sendRGB() {
-      const now = Date.now();
-      if (now - lastSendTime < 60) return; // Throttling 60ms
-      lastSendTime = now;
-
-      // Scaling software PWM per la luminosità
-      const r = Math.round(currentColor.r * currentBrightness);
-      const g = Math.round(currentColor.g * currentBrightness);
-      const b = Math.round(currentColor.b * currentBrightness);
-
-      const proto = document.getElementById('protocolSelect').value;
-      let packet = [];
-
-      if (proto.startsWith('lotus')) {
-        packet = [0x7E, 0x00, 0x05, 0x03, r, g, b, 0x00, 0xEF];
-      } else if (proto === 'triones') {
-        packet = [0x56, r, g, b, 0x00, 0xF0, 0xAA];
-      }
-
-      sendRawBytes(packet);
-    }
-
-    function handleColorInput(hex) {
-      document.getElementById('colorHex').innerText = hex.toUpperCase();
-      currentColor.r = parseInt(hex.substring(1, 3), 16);
-      currentColor.g = parseInt(hex.substring(3, 5), 16);
-      currentColor.b = parseInt(hex.substring(5, 7), 16);
-      sendRGB();
-    }
-
-    function handleBrightness(val) {
-      document.getElementById('brightVal').innerText = `${val}%`;
-      currentBrightness = parseInt(val, 10) / 100;
-      sendRGB();
-    }
-
-    function applyPreset(hex, brightness) {
-      document.getElementById('colorPicker').value = hex;
-      document.getElementById('brightSlider').value = brightness;
-      document.getElementById('brightVal').innerText = `${brightness}%`;
-      handleColorInput(hex);
-      handleBrightness(brightness);
-      log(`Preset applicato: ${hex} @ ${brightness}%`);
-    }
-  </script>
+  <!-- Script Applicativi Modulari -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
