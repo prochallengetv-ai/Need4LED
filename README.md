@@ -1,4 +1,4 @@
-2. Apri **SCOOTER LED PRO** in Bluefy.
+2. Apri **Need4LED** in Bluefy.
 3. Premi **"Connetti Strisce LED"**.
 4. Nella finestra di dialogo Bluetooth, seleziona il dispositivo del controller (spesso denominato `ELK-BLEDOM`, `LotusLantern`, `LED...`, oppure con una stringa generica).
 5. Una volta connesso:
