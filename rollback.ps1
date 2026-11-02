@@ -19,7 +19,7 @@ $repoDir = $PSScriptRoot
 Set-Location $repoDir
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host "       NEED4LED — SISTEMA DI ROLLBACK AUTOMATICO       " -ForegroundColor Yellow
+Write-Host "       NEED4LED - SISTEMA DI ROLLBACK AUTOMATICO       " -ForegroundColor Yellow
 Write-Host "========================================================`n" -ForegroundColor Cyan
 
 # Elenco versioni canoniche e tag storici disponibili
@@ -27,7 +27,7 @@ $canonicalVersions = @(
     @{ Tag = "v2.3-ultimate";           Desc = "Release v2.3 - Wake Lock, Loop Deterministico, Cache GIF Offline" },
     @{ Tag = "v2.2-clean-ui";           Desc = "Release v2.2 - Design Liquid Glass, Sfondo Fluido, Template Presets" },
     @{ Tag = "v2.1-autoconnect-colors"; Desc = "Release v2.1 - Auto-associazione BLE, Watchdog e Calibrazione Pinout" },
-    @{ Tag = "v2.0-cockpit";            Desc = "Release v2.0 - Cruscotto Cockpit e Modalità Dinamiche" },
+    @{ Tag = "v2.0-cockpit";            Desc = "Release v2.0 - Cruscotto Cockpit e Modalita Dinamiche" },
     @{ Tag = "v1.0-classic";            Desc = "Release v1.0 - Interfaccia Base Classica" }
 )
 
@@ -94,6 +94,6 @@ git push origin main --force
 Write-Host "`n========================================================" -ForegroundColor Green
 Write-Host "  ROLLBACK COMPLETATO CON SUCCESSO!                   " -ForegroundColor Green
 Write-Host "  Versione attiva ora: $TargetVersion                " -ForegroundColor Yellow
-Write-Host "  GitHub Pages si aggiornerà entro 60 secondi.       " -ForegroundColor White
+Write-Host "  GitHub Pages si aggiornera entro 60 secondi.       " -ForegroundColor White
 Write-Host "  Ricarica l'app su Bluefy per visualizzare la release." -ForegroundColor Cyan
 Write-Host "========================================================`n" -ForegroundColor Green
