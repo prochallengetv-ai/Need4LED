@@ -1,6 +1,6 @@
 /**
- * Need4Led — App Entry Point
- * Inizializzazione moduli e setup globale
+ * Need4Led — App Entry Point (v2.2 Clean UI)
+ * Inizializzazione moduli, Web Bluetooth check e service worker setup
  */
 
 import { BLEManager } from './ble-manager.js';
@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Inizializza l'Interfaccia Utente
   uiControllerInstance = new UIController(bleManager);
 
+  // Header shortcut per Impostazioni
+  const btnHeaderSettings = document.getElementById('btnHeaderSettings');
+  if (btnHeaderSettings) {
+    btnHeaderSettings.addEventListener('click', () => {
+      uiControllerInstance.switchTab('tab-settings');
+    });
+  }
+
   // Verifica supporto Web Bluetooth all'avvio
   if (!bleManager.isSupported()) {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
@@ -38,25 +46,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isIOS) {
       uiControllerInstance.onBleStatusChange({
         state: 'error',
-        message: 'Apri questa pagina con l\'app Bluefy su iPhone'
+        message: 'APRI TRAMITE L\'APP BLUEFY SU IPHONE'
       });
-      uiControllerInstance.showToast('Per usare il Bluetooth su iPhone usa l\'app Bluefy (da App Store)', 6000);
+      uiControllerInstance.showToast('SU IPHONE UTILIZZA L\'APP BLUEFY (DA APP STORE) PER IL BLUETOOTH', 6000);
     } else {
       uiControllerInstance.onBleStatusChange({
         state: 'error',
-        message: 'Browser senza Web Bluetooth. Usa Chrome o Edge.'
+        message: 'BROWSER SENZA WEB BLUETOOTH. USA CHROME O EDGE.'
       });
     }
   } else {
     uiControllerInstance.onBleStatusChange({
       state: 'disconnected',
-      message: 'Pronto per la ricerca BLE'
+      message: 'PRONTO PER LA CONNESSIONE BLE'
     });
   }
 
-  // Registrazione Service Worker per Progressive Web App (con controllo forzato aggiornamenti)
+  // Registrazione Service Worker per Progressive Web App (con forzatura aggiornamento cache)
   if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js?v=2.0.1').then((reg) => {
+    navigator.serviceWorker.register('sw.js?v=2.2.0').then((reg) => {
       reg.update();
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;

@@ -1,7 +1,8 @@
 /**
- * Need4Led — Test Suite Protocolli BLE
+ * Need4Led — Test Suite Protocolli BLE & Modelli Preset
  * Verifica frame esadecimali generati per LotusLantern (Standard e V2), Triones,
- * calibrazione ordine canali (GRB, BRG...) e modalità Massimo Bianco ELK-BLEDOM.
+ * calibrazione ordine canali (GRB, BRG...), sequenza strobo Polizia (3 fasi senza verde)
+ * e modelli di preset pre-calibrati.
  */
 
 import {
@@ -11,7 +12,10 @@ import {
   remapColorChannels,
   LotusStandardEncoder,
   LotusV2Encoder,
-  TrionesEncoder
+  TrionesEncoder,
+  POLICE_SEQUENCE,
+  PRESET_MODELS,
+  PRESET_MODEL_CONFIGS
 } from '../js/protocols.js';
 
 let totalTests = 0;
@@ -19,8 +23,8 @@ let passedTests = 0;
 
 function assertEqual(actual, expected, testName) {
   totalTests++;
-  const actualStr = actual instanceof Uint8Array ? bytesToHex(actual) : actual;
-  const expectedStr = expected instanceof Uint8Array ? bytesToHex(expected) : expected;
+  const actualStr = actual instanceof Uint8Array ? bytesToHex(actual) : String(actual);
+  const expectedStr = expected instanceof Uint8Array ? bytesToHex(expected) : String(expected);
 
   if (actualStr === expectedStr) {
     passedTests++;
@@ -141,6 +145,39 @@ assertEqual(
   '56 FF 00 00 00 F0 AA',
   'Triones Colore Rosso'
 );
+
+// 7. Test Sequenza Strobo Polizia a 3 Fasi & Esclusione Canale Verde
+console.log('\n7. Test Sequenza Strobo Polizia (3 fasi continue, zero verde):');
+assertEqual(POLICE_SEQUENCE.length, 3, 'Sequenza Polizia ha esattamente 3 fasi continue');
+assertEqual(
+  `${POLICE_SEQUENCE[0].r},${POLICE_SEQUENCE[0].g},${POLICE_SEQUENCE[0].b}`,
+  '255,0,0',
+  'Fase 1 Polizia: Rosso Puro (255, 0, 0)'
+);
+assertEqual(
+  `${POLICE_SEQUENCE[1].r},${POLICE_SEQUENCE[1].g},${POLICE_SEQUENCE[1].b}`,
+  '0,0,0',
+  'Fase 2 Polizia: Nero / Spento (0, 0, 0)'
+);
+assertEqual(
+  `${POLICE_SEQUENCE[2].r},${POLICE_SEQUENCE[2].g},${POLICE_SEQUENCE[2].b}`,
+  '0,0,255',
+  'Fase 3 Polizia: Blu Puro (0, 0, 255)'
+);
+
+// Verifica che con pinout BRG nessun frame di Polizia attivi il canale verde (prevenendo il giallo)
+const policeFrame0_BRG = remapColorChannels(POLICE_SEQUENCE[0].r, POLICE_SEQUENCE[0].g, POLICE_SEQUENCE[0].b, 'BRG');
+assertEqual(policeFrame0_BRG[2], 0, 'Fase 1 BRG: Canale Verde rigorosamente a 0');
+const policeFrame2_BRG = remapColorChannels(POLICE_SEQUENCE[2].r, POLICE_SEQUENCE[2].g, POLICE_SEQUENCE[2].b, 'BRG');
+assertEqual(policeFrame2_BRG[2], 0, 'Fase 3 BRG: Canale Verde rigorosamente a 0');
+
+// 8. Test Modelli di Preset Pre-calibrati
+console.log('\n8. Test Modelli di Preset:');
+assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_SINGLE]), true, 'Modello Strobo Singolo presente');
+assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_POLICE]), true, 'Modello Strobo Alternato (Polizia) presente');
+assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.ALTERNATE_DIRECT]), true, 'Modello Alternato Diretto presente');
+assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.BREATHING]), true, 'Modello Breathing presente');
+assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STATIC_PURE]), true, 'Modello Statico Puro presente');
 
 console.log(`\n========================================`);
 console.log(`RISULTATO TEST: ${passedTests}/${totalTests} superati con successo.`);

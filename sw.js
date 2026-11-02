@@ -1,4 +1,4 @@
-const CACHE_NAME = 'need4led-v2.0.2-' + Date.now();
+const CACHE_NAME = 'need4led-v2.2-' + Date.now();
 const ASSETS = [
   './',
   './index.html',
@@ -32,7 +32,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Strategia Network-First per index.html / navigazione (così le modifiche si vedono SEMPRE istantaneamente)
+// Strategia Network-First per index.html e assets (aggiornamento istantaneo su iPhone e desktop)
 self.addEventListener('fetch', (e) => {
   if (e.request.mode === 'navigate' || e.request.destination === 'document') {
     e.respondWith(
@@ -49,7 +49,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Per CSS e JS: Network-first con fallback a cache
+  // Per CSS, JS e risorse statiche: Network-first con fallback a cache
   e.respondWith(
     fetch(e.request)
       .then((networkResponse) => {

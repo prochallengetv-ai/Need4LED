@@ -7,38 +7,37 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Need4Led">
   <meta name="theme-color" content="#000000">
-  <title>Need4Led — Controllo Strisce Bluetooth</title>
+  <title>Need4Led — Bluetooth LED Cockpit</title>
   
-  <link rel="stylesheet" href="css/style.css?v=2.0.2">
-  <link rel="manifest" href="manifest.json?v=2.0.2">
+  <link rel="stylesheet" href="css/style.css?v=2.2.0">
+  <link rel="manifest" href="manifest.json?v=2.2.0">
 </head>
 <body>
-  <!-- Effetti di Luce Ambientale di Sfondo -->
-  <div class="ambient-glow">
+  <!-- Layer di Sfondo Animato Fluido con Fallback GPU -->
+  <div class="bg-layer" aria-hidden="true"></div>
+
+  <!-- Effetti di Luce Ambientale Speculare -->
+  <div class="ambient-glow" aria-hidden="true">
     <div class="glow-orb-top" id="ambientTop"></div>
     <div class="glow-orb-bottom"></div>
   </div>
 
   <!-- Toast Notifiche a Scomparsa Rapida -->
-  <div class="toast-notice" id="toastNotice">Messaggio</div>
+  <div class="toast-notice" id="toastNotice">MESSAGGIO</div>
 
   <!-- Viewport Applicazione (Safe-Area Aware) -->
   <main class="app-viewport">
     
-    <!-- Header Superiore (Senza dicitura PRO) -->
+    <!-- Header Superiore Pulito (Senza Emoji, Tipografia Tecnica) -->
     <header class="app-header">
       <div class="brand-container">
-        <span class="brand-icon">🛴</span>
-        <h1 class="brand-title">Need4Led</h1>
+        <span class="brand-indicator-dot"></span>
+        <h1 class="brand-title">NEED4LED</h1>
+        <span class="brand-version-pill">V2.2</span>
       </div>
       <div class="header-actions">
-        <!-- Pulsante Calibrazione Rapida Canali -->
-        <button class="btn-icon-glass" id="btnOpenCalib" title="Calibrazione Colori Hardware" aria-label="Calibrazione Colori">
-          🎯
-        </button>
-        <!-- Pulsante Diagnostica BLE & Protocolli -->
-        <button class="btn-icon-glass" id="btnOpenDiag" title="Diagnostica BLE & Protocolli" aria-label="Diagnostica BLE">
-          ⚡
+        <button class="btn-header-link" id="btnHeaderSettings" aria-label="Impostazioni">
+          IMPOSTAZIONI
         </button>
       </div>
     </header>
@@ -48,90 +47,62 @@
       <div class="status-row">
         <div class="status-badge" id="statusBadge">
           <span class="status-dot" id="statusDot"></span>
-          <span id="statusLabel">Non connesso</span>
+          <span id="statusLabel">NON CONNESSO</span>
         </div>
-        <div class="auto-connect-pill" id="autoConnectPill">⚡ Auto-Associazione: ON</div>
+        <div class="auto-connect-pill" id="autoConnectPill">AUTO: ON</div>
       </div>
-      <div class="device-details-text" id="deviceSummary">Nessun controller attivo</div>
+      <div class="device-details-text" id="deviceSummary">NESSUN CONTROLLER ATTIVO</div>
 
       <button class="btn-connect-primary" id="btnConnect">
-        <span id="connectIcon">🔗</span>
-        <span id="connectText">Connetti Strisce LED</span>
+        <span class="connect-dot" id="connectIcon">LINK</span>
+        <span id="connectText">CONNETTI STRISCE LED</span>
       </button>
     </section>
 
     <!-- Master Power Switches (ACCENDI / SPEGNI) -->
     <section class="power-grid">
       <button class="btn-power btn-power-on" id="btnPowerOn" aria-label="Accendi Luci">
-        <span class="power-icon">⏻</span>
+        <span class="power-status-dot on-dot"></span>
         <span class="power-label">ACCENDI</span>
-        <span class="power-sub">Luci ON</span>
+        <span class="power-sub">LUCI ON</span>
       </button>
       <button class="btn-power btn-power-off" id="btnPowerOff" aria-label="Spegni Luci">
-        <span class="power-icon">⏼</span>
+        <span class="power-status-dot off-dot"></span>
         <span class="power-label">SPEGNI</span>
-        <span class="power-sub">Luci OFF</span>
+        <span class="power-sub">LUCI OFF</span>
       </button>
     </section>
 
-    <!-- Card Massimo Bianco ELK-BLEDOM (Potenza Massima Lumen) -->
-    <section class="glass-card max-white-card">
-      <div class="control-section-title">
-        <span class="title-with-icon">💡 <strong>Massimo Bianco</strong> (ELK Power)</span>
-        <span class="badge-pill">MAX LUMEN</span>
-      </div>
-      <p class="section-desc">Eroga la massima emissione luminosa per visibilità notturna su strada.</p>
-      
-      <button class="btn-max-white-primary" id="btnMaxWhiteFull">
-        <span>⚡ ACCENDI MASSIMO BIANCO 100%</span>
-      </button>
-
-      <!-- Tonalità di Bianco ELK -->
-      <div class="white-shades-grid">
-        <button class="btn-shade-white" id="btnWhiteCold" data-white="cold">
-          <span class="shade-dot shade-cold"></span>
-          <span>Freddo 6500K</span>
-        </button>
-        <button class="btn-shade-white" id="btnWhitePure" data-white="pure">
-          <span class="shade-dot shade-pure"></span>
-          <span>Puro 100% RGB</span>
-        </button>
-        <button class="btn-shade-white" id="btnWhiteWarm" data-white="warm">
-          <span class="shade-dot shade-warm"></span>
-          <span>Caldo 3200K</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Navigazione a Segmenti (Tab Dashboard) -->
+    <!-- Navigazione a Segmenti (5 Tab Senza Emoji) -->
     <nav class="nav-segmented" role="tablist">
-      <button class="segment-btn active" data-tab="tab-quick" role="tab">🏎️ Rapido</button>
-      <button class="segment-btn" data-tab="tab-dynamics" role="tab">🚨 Dinamici & Strobo</button>
-      <button class="segment-btn" data-tab="tab-color" role="tab">🎨 Colori</button>
-      <button class="segment-btn" data-tab="tab-custom" role="tab">⭐ I Miei Preset</button>
+      <button class="segment-btn active" data-tab="tab-dashboard" role="tab">DASHBOARD</button>
+      <button class="segment-btn" data-tab="tab-dynamics" role="tab">DINAMICI</button>
+      <button class="segment-btn" data-tab="tab-color" role="tab">COLORI</button>
+      <button class="segment-btn" data-tab="tab-presets" role="tab">PRESET</button>
+      <button class="segment-btn" data-tab="tab-settings" role="tab">IMPOSTAZIONI</button>
     </nav>
 
     <!-- =================================================================== -->
-    <!-- TAB 1: RAPIDO & GUIDA MONOPATTINO -->
+    <!-- TAB 1: DASHBOARD & GUIDA RAPIDA -->
     <!-- =================================================================== -->
-    <div class="tab-panel active" id="tab-quick">
+    <div class="tab-panel active" id="tab-dashboard">
       <!-- Regolazione Luminosità Rapida -->
       <section class="glass-card">
         <div class="control-section-title">
-          <span>Luminosità Striscia</span>
+          <span>LUMINOSITÀ STRISCIA</span>
           <span class="control-val-badge" id="brightnessValBadge">100%</span>
         </div>
         <div class="slider-container">
-          <span class="slider-icon">☼</span>
+          <span class="slider-boundary-label">0%</span>
           <input type="range" min="0" max="100" value="100" class="ios-slider" id="brightnessSlider" aria-label="Slider Luminosità">
-          <span class="slider-icon" style="font-size: 20px;">☀</span>
+          <span class="slider-boundary-label">100%</span>
         </div>
       </section>
 
       <!-- Preset Rapidi di Guida -->
       <section class="glass-card">
         <div class="control-section-title">
-          <span>Preset di Guida Rapidi</span>
+          <span>PRESET DI GUIDA RAPIDI</span>
           <span class="badge-pill">1-TOCCO</span>
         </div>
 
@@ -139,155 +110,183 @@
           <button class="preset-btn preset-white" data-preset="white">
             <div class="preset-swatch"></div>
             <div class="preset-info">
-              <span class="preset-name">Strada</span>
-              <span class="preset-desc">Bianco Visibilità</span>
+              <span class="preset-name">STRADA</span>
+              <span class="preset-desc">BIANCO VISIBILITÀ</span>
             </div>
           </button>
 
           <button class="preset-btn preset-red" data-preset="red">
             <div class="preset-swatch"></div>
             <div class="preset-info">
-              <span class="preset-name">Stop</span>
-              <span class="preset-desc">Rosso Sicurezza</span>
+              <span class="preset-name">STOP</span>
+              <span class="preset-desc">ROSSO SICUREZZA</span>
             </div>
           </button>
 
           <button class="preset-btn preset-cyan" data-preset="cyan">
             <div class="preset-swatch"></div>
             <div class="preset-info">
-              <span class="preset-name">Cyber Ciano</span>
-              <span class="preset-desc">Neon Futuristico</span>
+              <span class="preset-name">CYBER CIANO</span>
+              <span class="preset-desc">NEON FUTURISTICO</span>
             </div>
           </button>
 
           <button class="preset-btn preset-purple" data-preset="purple">
             <div class="preset-swatch"></div>
             <div class="preset-info">
-              <span class="preset-name">Neon Viola</span>
-              <span class="preset-desc">Stile Notturno</span>
+              <span class="preset-name">NEON VIOLA</span>
+              <span class="preset-desc">STILE NOTTURNO</span>
             </div>
           </button>
 
           <button class="preset-btn preset-amber" data-preset="amber">
             <div class="preset-swatch"></div>
             <div class="preset-info">
-              <span class="preset-name">Ambra Fendinebbia</span>
-              <span class="preset-desc">Attenzione / Pioggia</span>
+              <span class="preset-name">AMBRA SICUREZZA</span>
+              <span class="preset-desc">FENDINEBBIA / PIOGGIA</span>
             </div>
           </button>
 
           <button class="preset-btn preset-green" data-preset="green">
             <div class="preset-swatch"></div>
             <div class="preset-info">
-              <span class="preset-name">Eco Verde</span>
-              <span class="preset-desc">Cruising Relax</span>
+              <span class="preset-name">ECO VERDE</span>
+              <span class="preset-desc">CRUISING RELAX</span>
             </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- Card Massimo Bianco ELK-BLEDOM (Potenza Massima Lumen) -->
+      <section class="glass-card max-white-card">
+        <div class="control-section-title">
+          <span>MASSIMO BIANCO (ELK POWER)</span>
+          <span class="badge-pill">MAX LUMEN</span>
+        </div>
+        <p class="section-desc">Eroga la massima emissione luminosa per visibilità notturna su strada.</p>
+        
+        <button class="btn-max-white-primary" id="btnMaxWhiteFull">
+          <span>ACCENDI MASSIMO BIANCO 100%</span>
+        </button>
+
+        <!-- Tonalità di Bianco ELK -->
+        <div class="white-shades-grid">
+          <button class="btn-shade-white" id="btnWhiteCold" data-white="cold">
+            <span class="shade-dot shade-cold"></span>
+            <span>FREDDO 6500K</span>
+          </button>
+          <button class="btn-shade-white" id="btnWhitePure" data-white="pure">
+            <span class="shade-dot shade-pure"></span>
+            <span>PURO 100% RGB</span>
+          </button>
+          <button class="btn-shade-white" id="btnWhiteWarm" data-white="warm">
+            <span class="shade-dot shade-warm"></span>
+            <span>CALDO 3200K</span>
           </button>
         </div>
       </section>
     </div>
 
     <!-- =================================================================== -->
-    <!-- TAB 2: MODALITÀ DINAMICHE & STROBO (Polizia Blu & Rosso, ecc.) -->
+    <!-- TAB 2: DINAMICI & STROBO POLIZIA -->
     <!-- =================================================================== -->
     <div class="tab-panel" id="tab-dynamics">
       <section class="glass-card">
         <div class="control-section-title">
-          <span>Effetti Dinamici & Lampeggianti</span>
+          <span>EFFETTI DINAMICI &amp; STROBO</span>
           <span class="badge-pill active-mode-indicator" id="activeEffectIndicator">STATICO</span>
         </div>
-        <p class="section-desc">Animazioni ad alta visibilità per eventi, stile e segnalazione.</p>
+        <p class="section-desc">Animazioni stroboscopiche ad alta frequenza con timing calibrati internamente.</p>
 
-        <!-- Box Auto-Fix Calibrazione Polizia -->
-        <div class="color-fix-card" id="colorFixCard">
-          <div class="color-fix-header">
-            <span class="color-fix-icon">🔄</span>
-            <div>
-              <div class="color-fix-title">Calibrazione Rapida Polizia</div>
-              <div class="color-fix-desc">Lampeggia <strong>Blu &amp; Giallo</strong> invece di <strong>Blu &amp; Rosso</strong>?</div>
-            </div>
-          </div>
-          <button class="btn-fix-brg" id="btnFixBrg">⚡ Correggi in Rosso &amp; Blu Puro</button>
+        <!-- Barra di Controllo Effetto Attivo (Pulsante Stop) -->
+        <div class="effect-control-bar" id="effectControlBar" style="display: none;">
+          <div class="effect-active-name" id="effectActiveNameText">ANIMAZIONE IN CORSO...</div>
+          <button class="btn-stop-effect" id="btnStopEffect">FERMA EFFETTO</button>
         </div>
 
         <!-- Griglia Effetti Dinamici -->
         <div class="effects-grid">
           
-          <!-- POLIZIA: BLU E ROSSO LAMPEGGIANTE (Richiesta Utente) -->
+          <!-- POLIZIA: ROSSO -> NERO -> BLU (3 FASI CONTINUE, ZERO VERDE) -->
           <button class="effect-card effect-police" id="btnEffectPolice" data-effect="police">
             <div class="effect-preview-badge police-badge">
               <span class="dot-red"></span>
               <span class="dot-blue"></span>
             </div>
             <div class="effect-details">
-              <span class="effect-title">🚨 Polizia (Blu & Rosso)</span>
-              <span class="effect-desc">Lampeggio strobo alternato ad alta intensità</span>
+              <span class="effect-title">POLIZIA (ROSSO &amp; BLU)</span>
+              <span class="effect-desc">Ciclo continuo 3-fasi: Rosso puro -> Nero -> Blu puro</span>
             </div>
           </button>
 
           <!-- STROBO BIANCO SICUREZZA -->
           <button class="effect-card effect-white-strobe" data-effect="white_strobe">
-            <div class="effect-preview-badge strobe-badge">⚡⚡</div>
+            <div class="effect-preview-badge strobe-badge">
+              <span class="dot-white-pulse"></span>
+            </div>
             <div class="effect-details">
-              <span class="effect-title">⚡ Strobo Notte Bianco</span>
-              <span class="effect-desc">Lampeggio rapido per incroci al buio</span>
+              <span class="effect-title">STROBO BIANCO</span>
+              <span class="effect-desc">Lampeggio rapido di emergenza per incroci notturni</span>
             </div>
           </button>
 
-          <!-- ARCOBALENO DINAMICO -->
+          <!-- FLUSSO ARCOBALENO -->
           <button class="effect-card effect-rainbow" data-effect="rainbow">
-            <div class="effect-preview-badge rainbow-badge">🌈</div>
+            <div class="effect-preview-badge rainbow-badge">
+              <span class="dot-rainbow-wheel"></span>
+            </div>
             <div class="effect-details">
-              <span class="effect-title">🌈 Flusso Arcobaleno</span>
-              <span class="effect-desc">Ciclo cromatico continuo sfumato</span>
+              <span class="effect-title">FLUSSO ARCOBALENO</span>
+              <span class="effect-desc">Transizione cromatica circolare continua</span>
             </div>
           </button>
 
           <!-- RESPIRO CYBERPUNK (CIANO / VIOLA) -->
           <button class="effect-card effect-cyber" data-effect="cyber_breath">
-            <div class="effect-preview-badge cyber-badge">💠</div>
+            <div class="effect-preview-badge cyber-badge">
+              <span class="dot-cyan"></span>
+              <span class="dot-purple"></span>
+            </div>
             <div class="effect-details">
-              <span class="effect-title">💜 Respiro Cyberpunk</span>
-              <span class="effect-desc">Pulsazione morbida Ciano &amp; Viola neon</span>
+              <span class="effect-title">RESPIRO CYBER</span>
+              <span class="effect-desc">Pulsazione morbida sinusoidale Ciano &amp; Viola neon</span>
             </div>
           </button>
 
-          <!-- AMBRA EMERGENZA (HAZARD) -->
+          <!-- HAZARD EMERGENZA -->
           <button class="effect-card effect-hazard" data-effect="amber_hazard">
-            <div class="effect-preview-badge hazard-badge">⚠️</div>
+            <div class="effect-preview-badge hazard-badge">
+              <span class="dot-amber"></span>
+            </div>
             <div class="effect-details">
-              <span class="effect-title">⚠️ Hazard Fendinebbia</span>
-              <span class="effect-desc">Lampeggio intermittente di emergenza</span>
+              <span class="effect-title">HAZARD EMERGENZA</span>
+              <span class="effect-desc">Lampeggio intermittente ambra di attenzione</span>
             </div>
           </button>
 
           <!-- MULTICOLOR PARTY FLASH -->
           <button class="effect-card effect-party" data-effect="party_flash">
-            <div class="effect-preview-badge party-badge">🎉</div>
+            <div class="effect-preview-badge party-badge">
+              <span class="dot-party"></span>
+            </div>
             <div class="effect-details">
-              <span class="effect-title">🎉 Party Strobe</span>
-              <span class="effect-desc">Scatto stroboscopico multicolore</span>
+              <span class="effect-title">STROBO PARTY</span>
+              <span class="effect-desc">Scatto stroboscopico dinamico multicolore</span>
             </div>
           </button>
 
         </div>
 
-        <!-- Barra di Controllo Effetto Attivo (Pulsante Stop) -->
-        <div class="effect-control-bar" id="effectControlBar" style="display: none;">
-          <div class="effect-active-name" id="effectActiveNameText">Animazione in corso...</div>
-          <button class="btn-stop-effect" id="btnStopEffect">Ferma Effetto ⏹</button>
-        </div>
-
         <!-- Slider Velocità Effetto -->
         <div class="speed-control-section">
           <div class="control-section-title">
-            <span>Velocità / Frequenza Effetto</span>
-            <span class="control-val-badge" id="speedValBadge">Veloce (80%)</span>
+            <span>FREQUENZA / VELOCITÀ CICLO</span>
+            <span class="control-val-badge" id="speedValBadge">VELOCE (80%)</span>
           </div>
           <div class="slider-container">
-            <span class="slider-icon">🐢</span>
+            <span class="slider-boundary-label">LENTO</span>
             <input type="range" min="10" max="100" value="80" class="ios-slider" id="speedSlider" aria-label="Velocità Effetto">
-            <span class="slider-icon">⚡</span>
+            <span class="slider-boundary-label">RAPIDO</span>
           </div>
         </div>
 
@@ -295,27 +294,39 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- TAB 3: COLORI & CALIBRAZIONE HARDWARE PINOUT -->
+    <!-- TAB 3: COLORI & CANALI INDIVIDUALI -->
     <!-- =================================================================== -->
     <div class="tab-panel" id="tab-color">
       
-      <!-- Sezione Colore RGB Attivo -->
+      <!-- Sezione Colore Attivo & Palette -->
       <section class="glass-card">
         <div class="control-section-title">
-          <span>Tonalità & Colore Attivo</span>
+          <span>COLORE ATTIVO</span>
           <span class="color-hex-label" id="colorHexText">#00F0FF</span>
         </div>
 
         <div class="color-preview-bar">
           <div class="color-indicator-circle" id="colorIndicatorCircle"></div>
-          <div style="flex: 1; margin-left: 8px;">
-            <div style="font-size: 13px; font-weight: 700;">Colore Selezionato</div>
-            <div style="font-size: 11px; color: var(--text-tertiary);" id="rgbSummaryText">R: 0 | G: 240 | B: 255</div>
+          <div class="color-preview-info">
+            <div class="color-preview-label">LIVE BUFFER</div>
+            <div class="color-rgb-summary" id="rgbSummaryText">R: 0 | G: 240 | B: 255</div>
           </div>
           <label class="native-color-picker-btn">
-            <span>Palette</span>
+            <span>SELETTORE</span>
             <input type="color" id="nativeColorInput" value="#00F0FF">
           </label>
+        </div>
+
+        <!-- Palette Rapida Colori Verificati -->
+        <div class="palette-swatches-grid">
+          <button class="palette-swatch" style="background: #FF3B30;" data-r="255" data-g="0" data-b="0" title="Rosso"></button>
+          <button class="palette-swatch" style="background: #30D158;" data-r="0" data-g="255" data-b="0" title="Verde"></button>
+          <button class="palette-swatch" style="background: #0A84FF;" data-r="0" data-g="0" data-b="255" title="Blu"></button>
+          <button class="palette-swatch" style="background: #00F0FF;" data-r="0" data-g="240" data-b="255" title="Ciano"></button>
+          <button class="palette-swatch" style="background: #BF5AF2;" data-r="191" data-g="90" data-b="242" title="Viola"></button>
+          <button class="palette-swatch" style="background: #FF9F0A;" data-r="255" data-g="159" data-b="10" title="Ambra"></button>
+          <button class="palette-swatch" style="background: #FFD60A;" data-r="255" data-g="214" data-b="10" title="Giallo"></button>
+          <button class="palette-swatch" style="background: #FFFFFF;" data-r="255" data-g="255" data-b="255" title="Bianco"></button>
         </div>
 
         <!-- Canali RGB Individuali -->
@@ -338,97 +349,182 @@
         </div>
       </section>
 
-      <!-- CARD CALIBRAZIONE ORDINE CANALI FISICI (Risolve corrispondenza colori) -->
-      <section class="glass-card calibration-card">
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: PRESET DA MODELLO (TEMPLATES & 1-TOUCH ACTIVATION) -->
+    <!-- =================================================================== -->
+    <div class="tab-panel" id="tab-presets">
+      
+      <!-- Generatore Crea da Modello -->
+      <section class="glass-card">
         <div class="control-section-title">
-          <span class="title-with-icon">🎯 <strong>Calibrazione Colore Reale</strong></span>
-          <span class="badge-pill" id="badgeCurrentOrder">ORDINE: BRG</span>
+          <span>CREA PRESET DA MODELLO</span>
+          <span class="badge-pill">CALIBRATO</span>
         </div>
-        <div class="device-profile-badge">
-          <span>Veicolo Connesso: <strong id="deviceProfileName">Nessun veicolo attivo</strong></span>
-        </div>
-        <p class="section-desc">
-          Se premendo <strong>Rosso</strong> la tua striscia si accende di <strong>Verde</strong> o <strong>Blu</strong>, i pin fisici della striscia usano un ordine diverso. Esegui il test rapido per calibrare l'hardware:
-        </p>
+        <p class="section-desc">Crea nuovi preset con tempistiche pre-calibrate internamente per la massima reattività GATT.</p>
 
-        <!-- Test Rapido Canali -->
-        <div class="test-channels-row">
-          <button class="btn-test-ch btn-test-r" id="btnTestRed">🔴 Test Rosso</button>
-          <button class="btn-test-ch btn-test-g" id="btnTestGreen">🟢 Test Verde</button>
-          <button class="btn-test-ch btn-test-b" id="btnTestBlue">🔵 Test Blu</button>
+        <!-- Selezione Modello di Comportamento -->
+        <div class="diag-field-group">
+          <label class="diag-field-label" for="selectPresetModel">MODELLO DI COMPORTAMENTO BASE</label>
+          <select class="diag-select" id="selectPresetModel">
+            <option value="strobe_police" selected>STROBO ALTERNATO (STILE POLIZIA)</option>
+            <option value="strobe_single">STROBO SINGOLO (COLORE 1 -> SPENTO)</option>
+            <option value="alternate_direct">ALTERNATO DIRETTO (SENZA STACCO A NERO)</option>
+            <option value="breathing">PULSAZIONE / BREATHING (TRANSIZIONE MORBIDA)</option>
+            <option value="static_pure">STATICO PURO (COLORE FISSO AD ALTA POTENZA)</option>
+          </select>
+          <div class="model-desc-banner" id="modelDescText">Colore 1 -> Spento -> Colore 2 -> Colore 1 -> Spento -> Colore 2</div>
         </div>
 
-        <!-- Wizard Intelligente: "Cosa vedi sul veicolo?" -->
-        <div class="wizard-box">
-          <div class="wizard-title">Dopo aver premuto "🔴 Test Rosso", cosa vedi sulle strisce?</div>
-          <div class="wizard-options-grid">
-            <button class="btn-wizard-opt" id="btnSawRed">
-              <span class="wizard-opt-dot" style="background: #FF3B30;"></span>
-              <span>Vedo Rosso (Corretto)</span>
-            </button>
-            <button class="btn-wizard-opt" id="btnSawGreen">
-              <span class="wizard-opt-dot" style="background: #30D158;"></span>
-              <span>Vedo Verde (Imposta GRB)</span>
-            </button>
-            <button class="btn-wizard-opt" id="btnSawBlue">
-              <span class="wizard-opt-dot" style="background: #0A84FF;"></span>
-              <span>Vedo Blu (Imposta BRG)</span>
-            </button>
+        <!-- Selettore Colore 1 -->
+        <div class="color-picker-group">
+          <div class="picker-group-title">
+            <span>COLORE PRIMARIO</span>
+            <span class="color-preview-mini" id="color1Preview" style="background-color: #FF0000;"></span>
+          </div>
+          <div class="creator-swatches-row">
+            <button class="creator-swatch-1" style="background: #FF3B30;" data-r="255" data-g="0" data-b="0" data-hex="#FF3B30"></button>
+            <button class="creator-swatch-1" style="background: #30D158;" data-r="0" data-g="255" data-b="0" data-hex="#30D158"></button>
+            <button class="creator-swatch-1" style="background: #0A84FF;" data-r="0" data-g="0" data-b="255" data-hex="#0A84FF"></button>
+            <button class="creator-swatch-1" style="background: #00F0FF;" data-r="0" data-g="240" data-b="255" data-hex="#00F0FF"></button>
+            <button class="creator-swatch-1" style="background: #BF5AF2;" data-r="191" data-g="90" data-b="242" data-hex="#BF5AF2"></button>
+            <button class="creator-swatch-1" style="background: #FF9F0A;" data-r="255" data-g="159" data-b="10" data-hex="#FF9F0A"></button>
+            <button class="creator-swatch-1" style="background: #FFFFFF;" data-r="255" data-g="255" data-b="255" data-hex="#FFFFFF"></button>
+            <label class="mini-native-picker-label">
+              <span>HEX</span>
+              <input type="color" id="color1Native" value="#FF0000">
+            </label>
           </div>
         </div>
 
-        <!-- Selettore Ordine Canali Manuale -->
-        <div class="diag-field-group" style="margin-top: 10px;">
-          <label class="diag-field-label" for="selectChannelOrder">Oppure seleziona manualmente l'ordine pinout</label>
-          <select class="diag-select" id="selectChannelOrder">
-            <option value="BRG" selected>BRG — Ottimale per controller ELK (Rosso/Blu reali)</option>
-            <option value="GRB">GRB — Diffuso su strisce con Verde/Rosso invertiti</option>
-            <option value="RGB">RGB — Sequenza Standard</option>
-            <option value="BGR">BGR — Blu e Rosso invertiti</option>
-            <option value="RBG">RBG — Rosso, Blu, Verde</option>
-            <option value="GBR">GBR — Verde, Blu, Rosso</option>
-          </select>
+        <!-- Selettore Colore 2 (visibile per modelli con 2 colori) -->
+        <div class="color-picker-group" id="color2Group">
+          <div class="picker-group-title">
+            <span>COLORE SECONDARIO</span>
+            <span class="color-preview-mini" id="color2Preview" style="background-color: #0000FF;"></span>
+          </div>
+          <div class="creator-swatches-row">
+            <button class="creator-swatch-2" style="background: #0A84FF;" data-r="0" data-g="0" data-b="255" data-hex="#0A84FF"></button>
+            <button class="creator-swatch-2" style="background: #FF3B30;" data-r="255" data-g="0" data-b="0" data-hex="#FF3B30"></button>
+            <button class="creator-swatch-2" style="background: #00F0FF;" data-r="0" data-g="240" data-b="255" data-hex="#00F0FF"></button>
+            <button class="creator-swatch-2" style="background: #BF5AF2;" data-r="191" data-g="90" data-b="242" data-hex="#BF5AF2"></button>
+            <button class="creator-swatch-2" style="background: #30D158;" data-r="0" data-g="255" data-b="0" data-hex="#30D158"></button>
+            <button class="creator-swatch-2" style="background: #FF9F0A;" data-r="255" data-g="159" data-b="10" data-hex="#FF9F0A"></button>
+            <button class="creator-swatch-2" style="background: #FFFFFF;" data-r="255" data-g="255" data-b="255" data-hex="#FFFFFF"></button>
+            <label class="mini-native-picker-label">
+              <span>HEX</span>
+              <input type="color" id="color2Native" value="#0000FF">
+            </label>
+          </div>
+        </div>
+
+        <!-- Nome Preset e Azione di Salvataggio -->
+        <div class="diag-field-group">
+          <label class="diag-field-label" for="inputPresetModelName">NOME PRESET</label>
+          <input type="text" class="diag-input" id="inputPresetModelName" placeholder="ES. POLIZIA CIANO-VIOLA" maxlength="28">
+        </div>
+
+        <button class="btn-action-primary" id="btnSaveTemplatePreset">
+          SALVA E APPLICA PRESET
+        </button>
+      </section>
+
+      <!-- Griglia Preset Salvati -->
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>I MIEI PRESET SALVATI</span>
+          <span class="badge-pill">1-TOCCO</span>
+        </div>
+        <div class="custom-presets-grid" id="customPresetsContainer">
+          <!-- Popolato dinamicamente da localStorage -->
         </div>
       </section>
 
     </div>
 
     <!-- =================================================================== -->
-    <!-- TAB 4: I MIEI PRESET PERSONALIZZATI (Crea & Salva) -->
+    <!-- TAB 5: IMPOSTAZIONI, AUTO-ASSOCIAZIONE & HARDWARE -->
     <!-- =================================================================== -->
-    <div class="tab-panel" id="tab-custom">
+    <div class="tab-panel" id="tab-settings">
+      
+      <!-- Auto-Associazione Bluetooth all'avvio -->
       <section class="glass-card">
         <div class="control-section-title">
-          <span>I Miei Preset Personalizzati</span>
-          <button class="btn-pill-accent" id="btnOpenSavePresetModal">+ Salva Corrente</button>
+          <span>AUTO-CONNESSIONE ALL'AVVIO</span>
+          <span class="badge-pill" id="autoConnectStatusText">ATTIVA (GETDEVICES)</span>
         </div>
-        <p class="section-desc">Salva qualsiasi combinazione di colore e luminosità per richiamarla con un tocco.</p>
-
-        <!-- Modale / Box Creazione Nuovo Preset -->
-        <div class="create-preset-box" id="createPresetBox" style="display: none;">
-          <div class="create-preset-header">
-            <span>Nuovo Preset da Salvare</span>
-            <button class="btn-icon-subtle" id="btnClosePresetBox">✕</button>
-          </div>
-          <div class="create-preset-row">
-            <div class="preset-preview-circle" id="newPresetColorPreview"></div>
-            <input type="text" class="diag-input" id="inputPresetName" placeholder="Nome preset (es. Notte Sport)" maxlength="24">
-          </div>
-          <div class="create-preset-actions">
-            <span style="font-size: 11px; color: var(--text-tertiary);" id="newPresetSummary">100% Lum | #00F0FF</span>
-            <button class="btn-save-confirm" id="btnConfirmSavePreset">Salva Preset</button>
-          </div>
-        </div>
-
-        <!-- Griglia Preset Salvati -->
-        <div class="custom-presets-grid" id="customPresetsContainer">
-          <!-- Popolato dinamicamente da localStorage -->
-          <div class="empty-presets-placeholder" id="emptyPresetsPlaceholder">
-            <em>Nessun preset salvato finora. Imposta il colore e clicca "+ Salva Corrente".</em>
-          </div>
-        </div>
-
+        <p class="section-desc">Riconnessione automatica senza finestre modali basata sulle autorizzazioni Web Bluetooth e watchdog di recupero linea.</p>
+        <button class="btn-action-secondary" id="toggleAutoConnectBtn">
+          ABILITA / DISABILITA AUTO-CONNESSIONE
+        </button>
       </section>
+
+      <!-- Profilo Hardware & Calibrazione Pinout -->
+      <section class="glass-card calibration-card">
+        <div class="control-section-title">
+          <span>PROFILO HARDWARE &amp; PINOUT</span>
+          <span class="badge-pill" id="badgeCurrentOrder">PINOUT: BRG</span>
+        </div>
+        <div class="device-profile-badge">
+          <span>DISPOSITIVO: <strong id="deviceProfileName">NESSUN VEICOLO ATTIVO</strong></span>
+        </div>
+        <p class="section-desc">
+          I controller ELK-BLEDOM mappano solitamente i canali come <strong>BRG</strong>. Se premendo Rosso si accende un altro colore, correggi il pinout con un tocco.
+        </p>
+
+        <!-- Test Rapido Canali Fisici -->
+        <div class="test-channels-row">
+          <button class="btn-test-ch btn-test-r" id="btnTestRed">TEST ROSSO</button>
+          <button class="btn-test-ch btn-test-g" id="btnTestGreen">TEST VERDE</button>
+          <button class="btn-test-ch btn-test-b" id="btnTestBlue">TEST BLU</button>
+        </div>
+
+        <!-- Wizard Risoluzione Hardware Rapido -->
+        <div class="wizard-box">
+          <div class="wizard-title">VERIFICA VISIVA (DOPO "TEST ROSSO"):</div>
+          <div class="wizard-options-grid">
+            <button class="btn-wizard-opt" id="btnConfirmRedOk">
+              <span class="wizard-opt-dot" style="background: #FF3B30;"></span>
+              <span>VEDO ROSSO (CORRETTO)</span>
+            </button>
+            <button class="btn-wizard-opt" id="btnFixGrb">
+              <span class="wizard-opt-dot" style="background: #30D158;"></span>
+              <span>VEDO VERDE (IMPOSTA GRB)</span>
+            </button>
+            <button class="btn-wizard-opt" id="btnFixBrg">
+              <span class="wizard-opt-dot" style="background: #0A84FF;"></span>
+              <span>VEDO BLU (IMPOSTA BRG)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selettore Manuale Pinout -->
+        <div class="diag-field-group" style="margin-top: 14px;">
+          <label class="diag-field-label" for="selectChannelOrder">ORDINE PINOUT COMPLETO</label>
+          <select class="diag-select" id="selectChannelOrder">
+            <option value="BRG" selected>BRG — PREDEFINITO ELK-BLEDOM (ROSSO &amp; BLU REALI)</option>
+            <option value="GRB">GRB — CONTROLLER CON VERDE/ROSSO INVERTITI</option>
+            <option value="RGB">RGB — SEQUENZA STANDARD</option>
+            <option value="BGR">BGR — BLU E ROSSO INVERTITI</option>
+            <option value="RBG">RBG — ROSSO, BLU, VERDE</option>
+            <option value="GBR">GBR — VERDE, BLU, ROSSO</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Diagnostica BLE & Protocol Switcher -->
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>DIAGNOSTICA &amp; TERMINALE BLE</span>
+          <span class="badge-pill">LIVE TX/RX</span>
+        </div>
+        <p class="section-desc">Analizzatore di pacchetti, albero GATT explorer, invio raw hex e switch protocollo (LotusLantern Standard, V2, Triones).</p>
+        <button class="btn-action-primary" id="btnOpenDiagDrawer">
+          APRI CONSOLE DIAGNOSTICA BLE
+        </button>
+      </section>
+
     </div>
 
   </main>
@@ -439,70 +535,70 @@
       
       <div class="drawer-header">
         <div class="drawer-title">
-          <span>⚡</span>
-          <span>Diagnostica BLE & Protocolli</span>
+          <span class="drawer-dot"></span>
+          <span>DIAGNOSTICA BLE &amp; PROTOCOLLI</span>
         </div>
-        <button class="btn-close-drawer" id="btnCloseDiag" aria-label="Chiudi Diagnostica">✕</button>
+        <button class="btn-close-drawer" id="btnCloseDiag" aria-label="Chiudi Diagnostica">CHIUDI</button>
       </div>
 
       <div class="drawer-scroll-body">
         
         <!-- Scelta Protocollo Controller -->
         <div class="diag-field-group">
-          <label class="diag-field-label" for="selectProtocol">Protocollo di Comunicazione</label>
+          <label class="diag-field-label" for="selectProtocol">PROTOCOLLO DI COMUNICAZIONE</label>
           <select class="diag-select" id="selectProtocol">
-            <option value="lotus_standard" selected>LotusLantern / ELK-BLEDOM (Standard 9-byte 0x7E)</option>
-            <option value="lotus_v2">LotusLantern Variante 2 (Index byte 0x04)</option>
-            <option value="triones">Triones / HappyLighting (Frame 0xCC / 0x56)</option>
-            <option value="raw">Personalizzato (Invio Raw Hex)</option>
+            <option value="lotus_standard" selected>LOTUSLANTERN / ELK-BLEDOM (STANDARD 9-BYTE 0x7E)</option>
+            <option value="lotus_v2">LOTUSLANTERN VARIANTE 2 (INDEX BYTE 0x04)</option>
+            <option value="triones">TRIONES / HAPPYLIGHTING (FRAME 0xCC / 0x56)</option>
+            <option value="raw">PERSONALIZZATO (INVIO RAW HEX)</option>
           </select>
         </div>
 
         <!-- Metodo Scrittura BLE -->
         <div class="diag-field-group">
-          <label class="diag-field-label" for="selectWriteMode">Modalità di Scrittura GATT</label>
+          <label class="diag-field-label" for="selectWriteMode">MODALITÀ DI SCRITTURA GATT</label>
           <select class="diag-select" id="selectWriteMode">
-            <option value="auto" selected>Auto (Consigliato: senza risposta per Lotus)</option>
-            <option value="withoutResponse">Forza writeWithoutResponse</option>
-            <option value="withResponse">Forza writeWithResponse</option>
+            <option value="auto" selected>AUTO (SENZA RISPOSTA SE DISPONIBILE)</option>
+            <option value="withoutResponse">FORZA WRITE WITHOUT RESPONSE</option>
+            <option value="withResponse">FORZA WRITE WITH RESPONSE</option>
           </select>
         </div>
 
         <!-- Selettore Caratteristica Attiva -->
         <div class="diag-field-group">
-          <label class="diag-field-label" for="selectCharUuid">Caratteristica GATT Attiva</label>
+          <label class="diag-field-label" for="selectCharUuid">CARATTERISTICA GATT ATTIVA</label>
           <select class="diag-select" id="selectCharUuid">
-            <option value="">In attesa di scansione dispositivo...</option>
+            <option value="">IN ATTESA DI SCANSIONE DISPOSITIVO...</option>
           </select>
         </div>
 
         <!-- Albero Servizi e Caratteristiche Rilevati -->
         <div class="diag-field-group">
-          <label class="diag-field-label">GATT Explorer (Servizi & Proprietà)</label>
+          <label class="diag-field-label">GATT EXPLORER (SERVIZI &amp; PROPRIETÀ)</label>
           <div class="gatt-tree-list" id="gattTreeContainer">
-            <em>Nessun servizio rilevato. Connettiti al dispositivo per scansionare l'albero GATT.</em>
+            <em>Nessun servizio rilevato. Connettiti per scansionare l'albero GATT.</em>
           </div>
         </div>
 
         <!-- Invio Comando Hex Manuale -->
         <div class="diag-field-group">
-          <label class="diag-field-label" for="inputRawHex">Invia Sequenza Esadecimale (Raw Hex)</label>
+          <label class="diag-field-label" for="inputRawHex">INVIA FRAME ESADECIMALE (RAW HEX)</label>
           <div class="raw-send-row">
-            <input type="text" class="diag-input" id="inputRawHex" placeholder="es. 7E 00 04 F0 00 01 FF 00 EF">
-            <button class="btn-diag-send" id="btnSendRawHex">Invia</button>
+            <input type="text" class="diag-input" id="inputRawHex" placeholder="ES. 7E 00 04 F0 00 01 FF 00 EF">
+            <button class="btn-diag-send" id="btnSendRawHex">INVIA</button>
           </div>
         </div>
 
         <!-- Terminale Esadecimale Live -->
         <div class="terminal-container">
           <div class="terminal-header">
-            <span class="diag-field-label">Terminale Traffico BLE (TX / RX)</span>
-            <button class="btn-terminal-clear" id="btnClearLog">Pulisci Log</button>
+            <span class="diag-field-label">TERMINALE LIVE BLE (TX / RX)</span>
+            <button class="btn-terminal-clear" id="btnClearLog">PULISCI</button>
           </div>
           <div class="terminal-window" id="termWindow">
             <div class="term-entry">
               <span class="term-time">[--:--:--]</span>
-              <span class="term-info">Inizializzazione Need4Led. Pronto alla scansione.</span>
+              <span class="term-info">[INFO] Need4Led v2.2 inizializzato. Pronto.</span>
             </div>
           </div>
         </div>
@@ -513,6 +609,6 @@
   </div>
 
   <!-- Script Applicativi Modulari -->
-  <script type="module" src="js/app.js?v=2.0.2"></script>
+  <script type="module" src="js/app.js?v=2.2.0"></script>
 </body>
 </html>
