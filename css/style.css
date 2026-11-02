@@ -108,6 +108,13 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .bg-layer {
+    animation: none;
+    transform: none;
+  }
+}
+
 /* Effetti di Luce Ambientale Speculare */
 .ambient-glow {
   position: fixed;
