@@ -179,7 +179,9 @@ assertEqual(policeFrame2_BRG[2], 0, 'Fase 3 BRG: Canale Verde rigorosamente a 0'
 // 8. Test Modelli di Preset Pre-calibrati
 console.log('\n8. Test Modelli di Preset:');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_SINGLE]), true, 'Modello Strobo Singolo presente');
+assertEqual(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_SINGLE].intervalMs, 160, 'Strobo Singolo intervalMs = 160ms');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_POLICE]), true, 'Modello Strobo Alternato (Polizia) presente');
+assertEqual(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_POLICE].intervalMs, 160, 'Strobo Polizia intervalMs = 160ms');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.ALTERNATE_DIRECT]), true, 'Modello Alternato Diretto presente');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.BREATHING]), true, 'Modello Breathing presente');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STATIC_PURE]), true, 'Modello Statico Puro presente');

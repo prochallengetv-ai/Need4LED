@@ -56,16 +56,16 @@ export const PRESET_MODEL_CONFIGS = {
   [PRESET_MODELS.STROBE_SINGLE]: {
     id: PRESET_MODELS.STROBE_SINGLE,
     name: 'STROBO SINGOLO',
-    desc: 'Colore 1 -> Nero -> Colore 1 -> Nero',
+    desc: 'Colore 1 -> Nero -> Colore 1 -> Nero (Timing Uguali)',
     requiresColor2: false,
-    intervalMs: 120
+    intervalMs: 160
   },
   [PRESET_MODELS.STROBE_POLICE]: {
     id: PRESET_MODELS.STROBE_POLICE,
     name: 'STROBO ALTERNATO (STILE POLIZIA)',
     desc: 'Colore 1 -> Nero -> Colore 2 -> Nero (Timing Uguali)',
     requiresColor2: true,
-    intervalMs: 120
+    intervalMs: 160
   },
   [PRESET_MODELS.ALTERNATE_DIRECT]: {
     id: PRESET_MODELS.ALTERNATE_DIRECT,
@@ -106,7 +106,7 @@ export const POLICE_SEQUENCE = [
   { r: 0, g: 0, b: 0, label: 'NERO' }
 ];
 
-export const POLICE_STEP_INTERVAL_MS = 125;
+export const POLICE_STEP_INTERVAL_MS = 160;
 
 /**
  * Converte un array o Uint8Array in stringa esadecimale formattata (es: "7E 00 04 F0 ...")

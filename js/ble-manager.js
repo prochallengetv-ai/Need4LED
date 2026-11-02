@@ -346,7 +346,40 @@ export class BLEManager {
   }
 
   /**
-   * Invio pacchetto con rate-limiting protetto
+   * Scrittura diretta immediata e non throttled per loop di animazione asincroni deterministici.
+   * Restituisce una Promise che si risolve non appena il pacchetto è accettato dal buffer radio BLE.
+   */
+  async writePacketDirect(uint8Bytes) {
+    if (!this.isConnected || !this.activeCharacteristic) {
+      return false;
+    }
+    const char = this.activeCharacteristic;
+    const hex = Array.from(uint8Bytes).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+
+    try {
+      const supportsNoResp = char.properties && char.properties.writeWithoutResponse;
+      const useNoResponse = (this.writeMode === 'withoutResponse') ||
+        (this.writeMode === 'auto' && (supportsNoResp || typeof char.writeValueWithoutResponse === 'function'));
+
+      if (useNoResponse && typeof char.writeValueWithoutResponse === 'function') {
+        await char.writeValueWithoutResponse(uint8Bytes);
+        this.log('TX', hex, `(${uint8Bytes.length} bytes, direct writeWithoutResponse)`);
+      } else if (typeof char.writeValue === 'function') {
+        await char.writeValue(uint8Bytes);
+        this.log('TX', hex, `(${uint8Bytes.length} bytes, direct writeValue)`);
+      } else if (typeof char.writeValueWithResponse === 'function') {
+        await char.writeValueWithResponse(uint8Bytes);
+        this.log('TX', hex, `(${uint8Bytes.length} bytes, direct writeWithResponse)`);
+      }
+      return true;
+    } catch (err) {
+      this.log('ERROR', hex, `Scrittura diretta fallita: ${err.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Invio pacchetto con rate-limiting protetto (per slider ed eventi utente rapidi)
    */
   async sendPacket(uint8Bytes, immediate = false) {
     if (!this.isConnected || !this.activeCharacteristic) {

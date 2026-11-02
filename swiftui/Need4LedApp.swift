@@ -111,7 +111,7 @@ final class LEDBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeriphera
     func startPoliceStrobe() {
         stopAnimation()
         var step = 0
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.125, repeats: true) { [weak self] _ in
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.160, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             let phase = step % 4
             if phase == 0 {

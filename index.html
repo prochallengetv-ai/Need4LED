@@ -9,8 +9,8 @@
   <meta name="theme-color" content="#000000">
   <title>Need4Led — Bluetooth LED Cockpit</title>
   
-  <link rel="stylesheet" href="css/style.css?v=2.2.1">
-  <link rel="manifest" href="manifest.json?v=2.2.1">
+  <link rel="stylesheet" href="css/style.css?v=2.2.2">
+  <link rel="manifest" href="manifest.json?v=2.2.2">
 </head>
 <body>
   <!-- Layer di Sfondo Animato Fluido con Fallback GPU -->
@@ -277,16 +277,16 @@
 
         </div>
 
-        <!-- Slider Velocità Effetto -->
+        <!-- Slider Durata per Ogni Fase (Tempo di Attesa Uguale) -->
         <div class="speed-control-section">
           <div class="control-section-title">
-            <span>FREQUENZA / VELOCITÀ CICLO</span>
-            <span class="control-val-badge" id="speedValBadge">VELOCE (80%)</span>
+            <span>DURATA FASE (TEMPO UGUALE PER OGNUNO)</span>
+            <span class="control-val-badge" id="speedValBadge">160 MS</span>
           </div>
           <div class="slider-container">
-            <span class="slider-boundary-label">LENTO</span>
-            <input type="range" min="10" max="100" value="80" class="ios-slider" id="speedSlider" aria-label="Velocità Effetto">
-            <span class="slider-boundary-label">RAPIDO</span>
+            <span class="slider-boundary-label">80 MS</span>
+            <input type="range" min="80" max="400" value="160" step="10" class="ios-slider" id="speedSlider" aria-label="Durata per ogni fase">
+            <span class="slider-boundary-label">400 MS</span>
           </div>
         </div>
 
@@ -609,6 +609,6 @@
   </div>
 
   <!-- Script Applicativi Modulari -->
-  <script type="module" src="js/app.js?v=2.2.1"></script>
+  <script type="module" src="js/app.js?v=2.2.2"></script>
 </body>
 </html>

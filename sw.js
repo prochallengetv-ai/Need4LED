@@ -1,4 +1,4 @@
-const CACHE_NAME = 'need4led-v2.2.1-' + Date.now();
+const CACHE_NAME = 'need4led-v2.2.2-' + Date.now();
 const ASSETS = [
   './',
   './index.html',

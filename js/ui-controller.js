@@ -2,7 +2,8 @@
  * Need4Led — UI Controller
  * Gestione interfaccia Liquid Glass, navigazione a schede, auto-associazione all'avvio,
  * watchdog riconnessione, profili cromatici hardware per dispositivo, calibrazione pinout automatica,
- * sequenza strobo Polizia a 3 fasi (Rosso -> Nero -> Blu) e generatore preset da modelli pre-calibrati.
+ * sequenza strobo Polizia a 4 fasi simmetriche (Rosso -> Nero -> Blu -> Nero) con timing identici garantiti
+ * e generatore preset da modelli pre-calibrati.
  * Zero emoji: tipografia tecnica pulita, indicatori geometrici LED e contrasto elevato.
  */
 
@@ -39,10 +40,10 @@ export class UIController {
       b: 255
     };
 
-    // Gestione Effetti Dinamici & Preset Animati
+    // Gestione Effetti Dinamici Asincroni Deterministici
     this.activeEffect = null;
-    this.effectTimer = null;
-    this.effectSpeed = 80;
+    this.currentLoopId = 0; // Token univoco per arrestare immediatamente qualsiasi loop asincrono
+    this.effectHoldTimeMs = POLICE_STEP_INTERVAL_MS || 160; // Durata esatta di mantenimento per ogni singola fase
 
     // Colori selezionati per il generatore preset da modello
     this.creatorState = {
@@ -157,6 +158,10 @@ export class UIController {
     this.btnClearLog = document.getElementById('btnClearLog');
   }
 
+  _sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async _initAutoConnect() {
     const isAutoEnabled = localStorage.getItem('need4led_autoconnect_enabled') !== 'false';
     if (!isAutoEnabled) {
@@ -231,19 +236,13 @@ export class UIController {
       });
     }
 
-    // Slider Velocità Dinamici
+    // Slider Durata Fase / Velocità Strobo
     if (this.speedSlider) {
       this.speedSlider.addEventListener('input', (e) => {
-        this.effectSpeed = parseInt(e.target.value, 10);
-        let speedLabel = 'NORMALE';
-        if (this.effectSpeed >= 80) speedLabel = 'VELOCE / STROBO';
-        else if (this.effectSpeed <= 30) speedLabel = 'LENTO';
-        this.speedValBadge.textContent = `${speedLabel} (${this.effectSpeed}%)`;
-
-        if (this.ble.isConnected && typeof this.encoder.speed === 'function') {
-          try {
-            this.ble.sendPacket(this.encoder.speed(this.effectSpeed));
-          } catch (_) {}
+        const val = parseInt(e.target.value, 10);
+        this.effectHoldTimeMs = val;
+        if (this.speedValBadge) {
+          this.speedValBadge.textContent = `${val} MS (UGUALE PER OGNI FASE)`;
         }
       });
     }
@@ -382,7 +381,7 @@ export class UIController {
       this.btnTestRed.addEventListener('click', () => {
         this.vibrate(20);
         this.showToast('TEST ROSSO PURO (255, 0, 0)');
-        this.sendColorCommand(255, 0, 0);
+        this.sendColorCommandDirect(255, 0, 0);
       });
     }
 
@@ -390,7 +389,7 @@ export class UIController {
       this.btnTestGreen.addEventListener('click', () => {
         this.vibrate(20);
         this.showToast('TEST VERDE PURO (0, 255, 0)');
-        this.sendColorCommand(0, 255, 0);
+        this.sendColorCommandDirect(0, 255, 0);
       });
     }
 
@@ -398,7 +397,7 @@ export class UIController {
       this.btnTestBlue.addEventListener('click', () => {
         this.vibrate(20);
         this.showToast('TEST BLU PURO (0, 0, 255)');
-        this.sendColorCommand(0, 0, 255);
+        this.sendColorCommandDirect(0, 0, 255);
       });
     }
 
@@ -413,7 +412,7 @@ export class UIController {
       this.btnFixGrb.addEventListener('click', () => {
         this.setChannelOrder('GRB');
         this.showToast('PINOUT IMPOSTATO SU GRB');
-        this.sendColorCommand(255, 0, 0);
+        this.sendColorCommandDirect(255, 0, 0);
       });
     }
 
@@ -421,7 +420,7 @@ export class UIController {
       this.btnFixBrg.addEventListener('click', () => {
         this.setChannelOrder('BRG');
         this.showToast('PINOUT IMPOSTATO SU BRG (OTTIMALE ELK)');
-        this.sendColorCommand(255, 0, 0);
+        this.sendColorCommandDirect(255, 0, 0);
       });
     }
 
@@ -607,7 +606,7 @@ export class UIController {
 
     try {
       const packet = this.encoder.power(on);
-      await this.ble.sendPacket(packet, true);
+      await this.ble.writePacketDirect(packet);
     } catch (err) {
       if (!this.ble.isConnected) {
         this.showToast('BLUETOOTH NON CONNESSO', 2800);
@@ -624,13 +623,13 @@ export class UIController {
     if (this.brightnessValBadge) this.brightnessValBadge.textContent = '100%';
 
     try {
-      await this.ble.sendPacket(this.encoder.brightness(100), true);
+      await this.ble.writePacketDirect(this.encoder.brightness(100));
 
       if (shade === 'full') {
         this.updateColorValues(255, 255, 255, true);
         if (typeof this.encoder.whiteGrayscale === 'function') {
           setTimeout(() => {
-            this.ble.sendPacket(this.encoder.whiteGrayscale(), true).catch(() => {});
+            this.ble.writePacketDirect(this.encoder.whiteGrayscale()).catch(() => {});
           }, 60);
         }
         this.showToast('MASSIMO BIANCO 100% (FULL LUMEN)');
@@ -638,7 +637,7 @@ export class UIController {
         this.updateColorValues(220, 240, 255, true);
         if (typeof this.encoder.whiteCold === 'function') {
           setTimeout(() => {
-            this.ble.sendPacket(this.encoder.whiteCold(), true).catch(() => {});
+            this.ble.writePacketDirect(this.encoder.whiteCold()).catch(() => {});
           }, 60);
         }
         this.showToast('BIANCO FREDDO 6500K');
@@ -649,7 +648,7 @@ export class UIController {
         this.updateColorValues(255, 215, 150, true);
         if (typeof this.encoder.whiteWarm === 'function') {
           setTimeout(() => {
-            this.ble.sendPacket(this.encoder.whiteWarm(), true).catch(() => {});
+            this.ble.writePacketDirect(this.encoder.whiteWarm()).catch(() => {});
           }, 60);
         }
         this.showToast('BIANCO CALDO 3200K');
@@ -662,13 +661,15 @@ export class UIController {
   }
 
   // ===================================================================
-  // MODALITÀ DINAMICHE: Polizia 3-Fasi (Rosso -> Nero -> Blu) & Effetti
+  // MODALITÀ DINAMICHE ASINCRONE DETERMINISTICHE
   // ===================================================================
   startDynamicEffect(effectName) {
     this.vibrate(20);
     this.stopDynamicEffect(false);
 
     this.activeEffect = effectName;
+    const loopId = ++this.currentLoopId;
+
     if (this.activeEffectIndicator) {
       this.activeEffectIndicator.textContent = 'ATTIVO';
       this.activeEffectIndicator.style.background = 'rgba(0, 240, 255, 0.25)';
@@ -686,149 +687,164 @@ export class UIController {
       }
     });
 
-    if (this.ble.isConnected && typeof this.encoder.speed === 'function') {
-      try {
-        this.ble.sendPacket(this.encoder.speed(this.effectSpeed));
-      } catch (_) {}
-    }
-
-    const getInterval = () => Math.round(520 - (this.effectSpeed * 4.1));
-
     switch (effectName) {
-      case 'police': {
-        // Sequenza simmetrica 4-fasi a timing identici: Rosso -> Nero -> Blu -> Nero...
-        if (this.effectActiveNameText) {
-          this.effectActiveNameText.textContent = 'POLIZIA (ROSSO -> NERO -> BLU -> NERO)';
+      case 'police':
+        this._runPoliceLoop(loopId);
+        break;
+      case 'white_strobe':
+        this._runWhiteStrobeLoop(loopId);
+        break;
+      case 'rainbow':
+        this._runRainbowLoop(loopId);
+        break;
+      case 'cyber_breath':
+        this._runCyberBreathLoop(loopId);
+        break;
+      case 'amber_hazard':
+        this._runAmberHazardLoop(loopId);
+        break;
+      case 'party_flash':
+        this._runPartyLoop(loopId);
+        break;
+    }
+  }
+
+  // ===================================================================
+  // LOOP POLIZIA: ROSSO -> NERO -> BLU -> NERO (TEMPO UGUALE PER OGNUNO)
+  // ===================================================================
+  async _runPoliceLoop(loopId) {
+    if (this.effectActiveNameText) {
+      this.effectActiveNameText.textContent = 'POLIZIA (ROSSO -> NERO -> BLU -> NERO)';
+    }
+    this.showToast('MODALITÀ POLIZIA ATTIVATA (TIMING SIMMETRICI)');
+
+    let step = 0;
+    while (this.activeEffect === 'police' && this.currentLoopId === loopId) {
+      const phase = step % 4;
+      const current = POLICE_SEQUENCE[phase];
+
+      // 1. Invia il comando colore direttamente al buffer radio BLE
+      await this.sendColorCommandDirect(current.r, current.g, current.b);
+
+      // 2. Aggiorna l'anteprima visiva del cruscotto in tempo reale
+      if (this.ambientTop) {
+        if (current.r > 0) {
+          this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 59, 48, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
+        } else if (current.b > 0) {
+          this.ambientTop.style.background = 'radial-gradient(circle, rgba(10, 132, 255, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
+        } else {
+          this.ambientTop.style.background = 'none';
         }
-        this.showToast('MODALITÀ POLIZIA ATTIVATA (TIMING SIMMETRICI)');
-
-        let stepIndex = 0;
-        const policeLoop = () => {
-          if (this.activeEffect !== 'police') return;
-
-          const currentStep = POLICE_SEQUENCE[stepIndex % POLICE_SEQUENCE.length];
-          this.sendColorCommand(currentStep.r, currentStep.g, currentStep.b);
-
-          if (this.ambientTop) {
-            if (currentStep.r > 0) {
-              this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 59, 48, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
-            } else if (currentStep.b > 0) {
-              this.ambientTop.style.background = 'radial-gradient(circle, rgba(10, 132, 255, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
-            } else {
-              this.ambientTop.style.background = 'none';
-            }
-          }
-
-          stepIndex++;
-          const interval = Math.max(85, Math.round(POLICE_STEP_INTERVAL_MS * (1.4 - (this.effectSpeed / 160))));
-          this.effectTimer = setTimeout(policeLoop, interval);
-        };
-
-        policeLoop();
-        break;
       }
 
-      case 'white_strobe': {
-        if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'STROBO BIANCO SICUREZZA';
-        this.showToast('STROBO BIANCO ATTIVATO');
-        let on = false;
-        const strobeLoop = () => {
-          if (this.activeEffect !== 'white_strobe') return;
-          on = !on;
-          if (on) {
-            this.sendColorCommand(255, 255, 255);
-            if (this.ambientTop) this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
-          } else {
-            this.sendColorCommand(0, 0, 0);
-            if (this.ambientTop) this.ambientTop.style.background = 'none';
-          }
-          this.effectTimer = setTimeout(strobeLoop, Math.max(85, Math.round(getInterval() * 0.75)));
-        };
-        strobeLoop();
-        break;
-      }
+      // 3. MANTIENI IL COLORE ESATTAMENTE PER LO STESSO TEMPO
+      await this._sleep(this.effectHoldTimeMs);
+      step++;
+    }
+  }
 
-      case 'rainbow': {
-        if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'FLUSSO ARCOBALENO';
-        this.showToast('FLUSSO ARCOBALENO ATTIVATO');
-        let hue = 0;
-        const rainbowLoop = () => {
-          if (this.activeEffect !== 'rainbow') return;
-          hue = (hue + 18) % 360;
-          const [r, g, b] = this._hslToRgb(hue / 360, 1, 0.5);
-          this.sendColorCommand(r, g, b);
-          if (this.ambientTop) this.ambientTop.style.background = `radial-gradient(circle, rgba(${r}, ${g}, ${b}, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`;
-          this.effectTimer = setTimeout(rainbowLoop, Math.max(85, Math.round(getInterval() * 0.9)));
-        };
-        rainbowLoop();
-        break;
-      }
+  // ===================================================================
+  // LOOP STROBO BIANCO: BIANCO -> NERO (TEMPO UGUALE)
+  // ===================================================================
+  async _runWhiteStrobeLoop(loopId) {
+    if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'STROBO BIANCO SICUREZZA';
+    this.showToast('STROBO BIANCO ATTIVATO');
 
-      case 'cyber_breath': {
-        if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'RESPIRO CYBER (CIANO / VIOLA)';
-        this.showToast('RESPIRO CYBER ATTIVATO');
-        let t = 0;
-        const breathLoop = () => {
-          if (this.activeEffect !== 'cyber_breath') return;
-          const factor = (Math.sin(t) + 1) / 2;
-          const r = Math.round(factor * 191);
-          const g = Math.round((1 - factor) * 240 + factor * 90);
-          const b = Math.round((1 - factor) * 255 + factor * 242);
-
-          this.sendColorCommand(r, g, b);
-          t += 0.22;
-          this.effectTimer = setTimeout(breathLoop, Math.max(75, Math.round(getInterval() * 0.5)));
-        };
-        breathLoop();
-        break;
+    let on = false;
+    while (this.activeEffect === 'white_strobe' && this.currentLoopId === loopId) {
+      on = !on;
+      if (on) {
+        await this.sendColorCommandDirect(255, 255, 255);
+        if (this.ambientTop) this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
+      } else {
+        await this.sendColorCommandDirect(0, 0, 0);
+        if (this.ambientTop) this.ambientTop.style.background = 'none';
       }
+      await this._sleep(this.effectHoldTimeMs);
+    }
+  }
 
-      case 'amber_hazard': {
-        if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'HAZARD EMERGENZA';
-        this.showToast('HAZARD EMERGENZA ATTIVATO');
-        let on = false;
-        const hazardLoop = () => {
-          if (this.activeEffect !== 'amber_hazard') return;
-          on = !on;
-          if (on) {
-            this.sendColorCommand(255, 140, 0);
-            if (this.ambientTop) this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 140, 0, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
-          } else {
-            this.sendColorCommand(0, 0, 0);
-            if (this.ambientTop) this.ambientTop.style.background = 'none';
-          }
-          this.effectTimer = setTimeout(hazardLoop, Math.max(90, Math.round(getInterval() * 0.95)));
-        };
-        hazardLoop();
-        break;
-      }
+  // ===================================================================
+  // LOOP HAZARD AMBRA: AMBRA -> NERO (TEMPO UGUALE)
+  // ===================================================================
+  async _runAmberHazardLoop(loopId) {
+    if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'HAZARD EMERGENZA';
+    this.showToast('HAZARD EMERGENZA ATTIVATO');
 
-      case 'party_flash': {
-        if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'STROBO PARTY MULTICOLOR';
-        this.showToast('STROBO PARTY ATTIVATO');
-        const partyColors = [
-          [255, 0, 0], [0, 255, 0], [0, 0, 255],
-          [255, 255, 0], [0, 240, 255], [255, 0, 255]
-        ];
-        let pIndex = 0;
-        const partyLoop = () => {
-          if (this.activeEffect !== 'party_flash') return;
-          const [r, g, b] = partyColors[pIndex % partyColors.length];
-          this.sendColorCommand(r, g, b);
-          pIndex++;
-          this.effectTimer = setTimeout(partyLoop, Math.max(80, Math.round(getInterval() * 0.6)));
-        };
-        partyLoop();
-        break;
+    let on = false;
+    while (this.activeEffect === 'amber_hazard' && this.currentLoopId === loopId) {
+      on = !on;
+      if (on) {
+        await this.sendColorCommandDirect(255, 140, 0);
+        if (this.ambientTop) this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 140, 0, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
+      } else {
+        await this.sendColorCommandDirect(0, 0, 0);
+        if (this.ambientTop) this.ambientTop.style.background = 'none';
       }
+      await this._sleep(Math.round(this.effectHoldTimeMs * 1.5));
+    }
+  }
+
+  // ===================================================================
+  // LOOP FLUSSO ARCOBALENO
+  // ===================================================================
+  async _runRainbowLoop(loopId) {
+    if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'FLUSSO ARCOBALENO';
+    this.showToast('FLUSSO ARCOBALENO ATTIVATO');
+
+    let hue = 0;
+    while (this.activeEffect === 'rainbow' && this.currentLoopId === loopId) {
+      hue = (hue + 16) % 360;
+      const [r, g, b] = this._hslToRgb(hue / 360, 1, 0.5);
+      await this.sendColorCommandDirect(r, g, b);
+      if (this.ambientTop) this.ambientTop.style.background = `radial-gradient(circle, rgba(${r}, ${g}, ${b}, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`;
+      await this._sleep(this.effectHoldTimeMs);
+    }
+  }
+
+  // ===================================================================
+  // LOOP RESPIRO CYBER
+  // ===================================================================
+  async _runCyberBreathLoop(loopId) {
+    if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'RESPIRO CYBER (CIANO / VIOLA)';
+    this.showToast('RESPIRO CYBER ATTIVATO');
+
+    let t = 0;
+    while (this.activeEffect === 'cyber_breath' && this.currentLoopId === loopId) {
+      const factor = (Math.sin(t) + 1) / 2;
+      const r = Math.round(factor * 191);
+      const g = Math.round((1 - factor) * 240 + factor * 90);
+      const b = Math.round((1 - factor) * 255 + factor * 242);
+
+      await this.sendColorCommandDirect(r, g, b);
+      t += 0.22;
+      await this._sleep(Math.max(60, Math.round(this.effectHoldTimeMs * 0.45)));
+    }
+  }
+
+  // ===================================================================
+  // LOOP STROBO PARTY MULTICOLOR
+  // ===================================================================
+  async _runPartyLoop(loopId) {
+    if (this.effectActiveNameText) this.effectActiveNameText.textContent = 'STROBO PARTY MULTICOLOR';
+    this.showToast('STROBO PARTY ATTIVATO');
+
+    const partyColors = [
+      [255, 0, 0], [0, 255, 0], [0, 0, 255],
+      [255, 255, 0], [0, 240, 255], [255, 0, 255]
+    ];
+    let pIndex = 0;
+    while (this.activeEffect === 'party_flash' && this.currentLoopId === loopId) {
+      const [r, g, b] = partyColors[pIndex % partyColors.length];
+      await this.sendColorCommandDirect(r, g, b);
+      pIndex++;
+      await this._sleep(this.effectHoldTimeMs);
     }
   }
 
   stopDynamicEffect(resetIndicator = true) {
-    if (this.effectTimer) {
-      clearTimeout(this.effectTimer);
-      this.effectTimer = null;
-    }
+    // Invalida all'istante qualsiasi loop asincrono in esecuzione
+    this.currentLoopId++;
     this.activeEffect = null;
 
     if (resetIndicator) {
@@ -919,16 +935,18 @@ export class UIController {
     }
 
     if (transmit) {
-      this.sendColorCommand(r, g, b);
+      this.sendColorCommandDirect(r, g, b);
     }
   }
 
-  sendColorCommand(r, g, b) {
-    if (!this.ble.isConnected) return;
+  async sendColorCommandDirect(r, g, b) {
+    if (!this.ble.isConnected) return false;
     try {
       const packet = this.encoder.color(r, g, b, this.channelOrder);
-      this.ble.sendPacket(packet);
-    } catch (_) {}
+      return await this.ble.writePacketDirect(packet);
+    } catch (_) {
+      return false;
+    }
   }
 
   sendBrightnessCommand(level) {
@@ -1005,16 +1023,16 @@ export class UIController {
     this.vibrate(20);
     this.stopDynamicEffect();
 
-    const config = PRESET_MODEL_CONFIGS[preset.model] || PRESET_MODEL_CONFIGS[PRESET_MODELS.STATIC_PURE];
-
     if (preset.model === PRESET_MODELS.STATIC_PURE) {
       this.updateColorValues(preset.color1.r, preset.color1.g, preset.color1.b, true);
       this.showToast(`PRESET ATTIVATO: ${preset.name}`);
       return;
     }
 
-    // Modalità basata su animazione interna pre-calibrata
+    // Modalità asincrona con timing simmetrico garantito
     this.activeEffect = `custom_${preset.id}`;
+    const loopId = ++this.currentLoopId;
+
     if (this.activeEffectIndicator) {
       this.activeEffectIndicator.textContent = 'ATTIVO';
       this.activeEffectIndicator.style.background = 'rgba(0, 240, 255, 0.25)';
@@ -1027,65 +1045,81 @@ export class UIController {
 
     this.showToast(`PRESET ATTIVATO: ${preset.name}`);
 
-    if (preset.model === PRESET_MODELS.STROBE_SINGLE) {
-      // Colore 1 -> Nero -> Colore 1 -> Nero
-      let on = false;
-      const loop = () => {
-        if (this.activeEffect !== `custom_${preset.id}`) return;
-        on = !on;
-        if (on) {
-          this.sendColorCommand(preset.color1.r, preset.color1.g, preset.color1.b);
-        } else {
-          this.sendColorCommand(0, 0, 0);
-        }
-        this.effectTimer = setTimeout(loop, config.intervalMs || 120);
-      };
-      loop();
-    } else if (preset.model === PRESET_MODELS.STROBE_POLICE) {
-      // Colore 1 -> Nero -> Colore 2 -> Nero (timing identici e simmetrici)
-      let step = 0;
-      const loop = () => {
-        if (this.activeEffect !== `custom_${preset.id}`) return;
-        const phase = step % 4;
-        if (phase === 0) {
-          this.sendColorCommand(preset.color1.r, preset.color1.g, preset.color1.b);
-        } else if (phase === 1 || phase === 3) {
-          this.sendColorCommand(0, 0, 0);
-        } else {
-          const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
-          this.sendColorCommand(c2.r, c2.g, c2.b);
-        }
-        step++;
-        this.effectTimer = setTimeout(loop, config.intervalMs || 120);
-      };
-      loop();
+    if (preset.model === PRESET_MODELS.STROBE_POLICE) {
+      this._runPresetStrobePolice(loopId, preset);
+    } else if (preset.model === PRESET_MODELS.STROBE_SINGLE) {
+      this._runPresetStrobeSingle(loopId, preset);
     } else if (preset.model === PRESET_MODELS.ALTERNATE_DIRECT) {
-      // Colore 1 -> Colore 2 diretto
-      let toggle = false;
-      const loop = () => {
-        if (this.activeEffect !== `custom_${preset.id}`) return;
-        toggle = !toggle;
-        const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
-        const activeC = toggle ? preset.color1 : c2;
-        this.sendColorCommand(activeC.r, activeC.g, activeC.b);
-        this.effectTimer = setTimeout(loop, config.intervalMs || 220);
-      };
-      loop();
+      this._runPresetAlternateDirect(loopId, preset);
     } else if (preset.model === PRESET_MODELS.BREATHING) {
-      // Transizione fluida continua tra Colore 1 e Colore 2
-      let t = 0;
-      const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
-      const loop = () => {
-        if (this.activeEffect !== `custom_${preset.id}`) return;
-        const factor = (Math.sin(t) + 1) / 2;
-        const r = Math.round(preset.color1.r * (1 - factor) + c2.r * factor);
-        const g = Math.round(preset.color1.g * (1 - factor) + c2.g * factor);
-        const b = Math.round(preset.color1.b * (1 - factor) + c2.b * factor);
-        this.sendColorCommand(r, g, b);
-        t += 0.25;
-        this.effectTimer = setTimeout(loop, config.stepIntervalMs || 80);
-      };
-      loop();
+      this._runPresetBreathing(loopId, preset);
+    }
+  }
+
+  // ===================================================================
+  // PRESET STROBO POLIZIA: C1 -> NERO -> C2 -> NERO (TEMPO UGUALE PER OGNUNO)
+  // ===================================================================
+  async _runPresetStrobePolice(loopId, preset) {
+    const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
+    let step = 0;
+    while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      const phase = step % 4;
+      if (phase === 0) {
+        await this.sendColorCommandDirect(preset.color1.r, preset.color1.g, preset.color1.b);
+      } else if (phase === 1 || phase === 3) {
+        await this.sendColorCommandDirect(0, 0, 0);
+      } else {
+        await this.sendColorCommandDirect(c2.r, c2.g, c2.b);
+      }
+      await this._sleep(this.effectHoldTimeMs);
+      step++;
+    }
+  }
+
+  // ===================================================================
+  // PRESET STROBO SINGOLO: C1 -> NERO -> C1 -> NERO (TEMPO UGUALE)
+  // ===================================================================
+  async _runPresetStrobeSingle(loopId, preset) {
+    let on = false;
+    while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      on = !on;
+      if (on) {
+        await this.sendColorCommandDirect(preset.color1.r, preset.color1.g, preset.color1.b);
+      } else {
+        await this.sendColorCommandDirect(0, 0, 0);
+      }
+      await this._sleep(this.effectHoldTimeMs);
+    }
+  }
+
+  // ===================================================================
+  // PRESET ALTERNATO DIRETTO: C1 -> C2 (TEMPO UGUALE)
+  // ===================================================================
+  async _runPresetAlternateDirect(loopId, preset) {
+    const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
+    let toggle = false;
+    while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      toggle = !toggle;
+      const activeC = toggle ? preset.color1 : c2;
+      await this.sendColorCommandDirect(activeC.r, activeC.g, activeC.b);
+      await this._sleep(this.effectHoldTimeMs);
+    }
+  }
+
+  // ===================================================================
+  // PRESET BREATHING
+  // ===================================================================
+  async _runPresetBreathing(loopId, preset) {
+    const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
+    let t = 0;
+    while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      const factor = (Math.sin(t) + 1) / 2;
+      const r = Math.round(preset.color1.r * (1 - factor) + c2.r * factor);
+      const g = Math.round(preset.color1.g * (1 - factor) + c2.g * factor);
+      const b = Math.round(preset.color1.b * (1 - factor) + c2.b * factor);
+      await this.sendColorCommandDirect(r, g, b);
+      t += 0.22;
+      await this._sleep(Math.max(50, Math.round(this.effectHoldTimeMs * 0.45)));
     }
   }
 
@@ -1182,7 +1216,7 @@ export class UIController {
 
     try {
       const bytes = hexToBytes(rawStr);
-      await this.ble.sendPacket(bytes, true);
+      await this.ble.writePacketDirect(bytes);
       this.showToast(`INVIATI ${bytes.length} BYTES`);
       this.vibrate(15);
     } catch (err) {

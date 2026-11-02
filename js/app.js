@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Registrazione Service Worker per Progressive Web App (con forzatura aggiornamento cache)
   if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js?v=2.2.1').then((reg) => {
+    navigator.serviceWorker.register('sw.js?v=2.2.2').then((reg) => {
       reg.update();
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
