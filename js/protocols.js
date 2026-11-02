@@ -63,7 +63,7 @@ export const PRESET_MODEL_CONFIGS = {
   [PRESET_MODELS.STROBE_POLICE]: {
     id: PRESET_MODELS.STROBE_POLICE,
     name: 'STROBO ALTERNATO (STILE POLIZIA)',
-    desc: 'Colore 1 -> Nero -> Colore 2 -> Colore 1 -> Nero -> Colore 2',
+    desc: 'Colore 1 -> Nero -> Colore 2 -> Nero (Timing Uguali)',
     requiresColor2: true,
     intervalMs: 120
   },
@@ -92,16 +92,18 @@ export const PRESET_MODEL_CONFIGS = {
 };
 
 /**
- * Sequenza Police Strobe rigorosa a 3 passi:
+ * Sequenza Police Strobe simmetrica a 4 passi con timing identici:
  * PASSO 1: ROSSO PURO (255, 0, 0)
  * PASSO 2: NERO / SPENTO (0, 0, 0)
  * PASSO 3: BLU PURO (0, 0, 255)
- * (Ripeti ciclicamente: Rosso -> Nero -> Blu -> Rosso...)
+ * PASSO 4: NERO / SPENTO (0, 0, 0)
+ * (Ripeti ciclicamente con timing uguale: Rosso -> Nero -> Blu -> Nero...)
  */
 export const POLICE_SEQUENCE = [
   { r: 255, g: 0, b: 0, label: 'ROSSO' },
   { r: 0, g: 0, b: 0, label: 'NERO' },
-  { r: 0, g: 0, b: 255, label: 'BLU' }
+  { r: 0, g: 0, b: 255, label: 'BLU' },
+  { r: 0, g: 0, b: 0, label: 'NERO' }
 ];
 
 export const POLICE_STEP_INTERVAL_MS = 125;

@@ -696,17 +696,17 @@ export class UIController {
 
     switch (effectName) {
       case 'police': {
-        // Sequenza rigorosa continua: Rosso -> Nero -> Blu -> Rosso -> Nero -> Blu...
+        // Sequenza simmetrica 4-fasi a timing identici: Rosso -> Nero -> Blu -> Nero...
         if (this.effectActiveNameText) {
-          this.effectActiveNameText.textContent = 'POLIZIA (ROSSO -> NERO -> BLU)';
+          this.effectActiveNameText.textContent = 'POLIZIA (ROSSO -> NERO -> BLU -> NERO)';
         }
-        this.showToast('MODALITÀ POLIZIA ATTIVATA');
+        this.showToast('MODALITÀ POLIZIA ATTIVATA (TIMING SIMMETRICI)');
 
         let stepIndex = 0;
         const policeLoop = () => {
           if (this.activeEffect !== 'police') return;
 
-          const currentStep = POLICE_SEQUENCE[stepIndex % 3];
+          const currentStep = POLICE_SEQUENCE[stepIndex % POLICE_SEQUENCE.length];
           this.sendColorCommand(currentStep.r, currentStep.g, currentStep.b);
 
           if (this.ambientTop) {
@@ -1042,14 +1042,14 @@ export class UIController {
       };
       loop();
     } else if (preset.model === PRESET_MODELS.STROBE_POLICE) {
-      // Colore 1 -> Nero -> Colore 2 -> Colore 1 -> Nero -> Colore 2
+      // Colore 1 -> Nero -> Colore 2 -> Nero (timing identici e simmetrici)
       let step = 0;
       const loop = () => {
         if (this.activeEffect !== `custom_${preset.id}`) return;
-        const phase = step % 6;
-        if (phase === 0 || phase === 3) {
+        const phase = step % 4;
+        if (phase === 0) {
           this.sendColorCommand(preset.color1.r, preset.color1.g, preset.color1.b);
-        } else if (phase === 1 || phase === 4) {
+        } else if (phase === 1 || phase === 3) {
           this.sendColorCommand(0, 0, 0);
         } else {
           const c2 = preset.color2 || { r: 0, g: 0, b: 255 };

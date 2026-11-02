@@ -146,9 +146,9 @@ assertEqual(
   'Triones Colore Rosso'
 );
 
-// 7. Test Sequenza Strobo Polizia a 3 Fasi & Esclusione Canale Verde
-console.log('\n7. Test Sequenza Strobo Polizia (3 fasi continue, zero verde):');
-assertEqual(POLICE_SEQUENCE.length, 3, 'Sequenza Polizia ha esattamente 3 fasi continue');
+// 7. Test Sequenza Strobo Polizia a 4 Fasi Simmetriche & Esclusione Canale Verde
+console.log('\n7. Test Sequenza Strobo Polizia (4 fasi simmetriche Rosso-Nero-Blu-Nero, timing uguali, zero verde):');
+assertEqual(POLICE_SEQUENCE.length, 4, 'Sequenza Polizia ha esattamente 4 fasi simmetriche');
 assertEqual(
   `${POLICE_SEQUENCE[0].r},${POLICE_SEQUENCE[0].g},${POLICE_SEQUENCE[0].b}`,
   '255,0,0',
@@ -163,6 +163,11 @@ assertEqual(
   `${POLICE_SEQUENCE[2].r},${POLICE_SEQUENCE[2].g},${POLICE_SEQUENCE[2].b}`,
   '0,0,255',
   'Fase 3 Polizia: Blu Puro (0, 0, 255)'
+);
+assertEqual(
+  `${POLICE_SEQUENCE[3].r},${POLICE_SEQUENCE[3].g},${POLICE_SEQUENCE[3].b}`,
+  '0,0,0',
+  'Fase 4 Polizia: Nero / Spento (0, 0, 0)'
 );
 
 // Verifica che con pinout BRG nessun frame di Polizia attivi il canale verde (prevenendo il giallo)

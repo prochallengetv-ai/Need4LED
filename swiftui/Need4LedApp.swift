@@ -107,16 +107,16 @@ final class LEDBluetoothManager: NSObject, CBCentralManagerDelegate, CBPeriphera
         sendCommand(bytes)
     }
     
-    // MARK: - Polizia 3-Fasi (Rosso -> Nero -> Blu)
+    // MARK: - Polizia 4-Fasi Simmetrica (Rosso -> Nero -> Blu -> Nero)
     func startPoliceStrobe() {
         stopAnimation()
         var step = 0
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.125, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            let phase = step % 3
+            let phase = step % 4
             if phase == 0 {
                 self.setColor(r: 255, g: 0, b: 0) // Rosso puro
-            } else if phase == 1 {
+            } else if phase == 1 || phase == 3 {
                 self.setColor(r: 0, g: 0, b: 0)   // Nero / spento
             } else {
                 self.setColor(r: 0, g: 0, b: 255) // Blu puro

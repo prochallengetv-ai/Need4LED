@@ -9,8 +9,8 @@
   <meta name="theme-color" content="#000000">
   <title>Need4Led — Bluetooth LED Cockpit</title>
   
-  <link rel="stylesheet" href="css/style.css?v=2.2.0">
-  <link rel="manifest" href="manifest.json?v=2.2.0">
+  <link rel="stylesheet" href="css/style.css?v=2.2.1">
+  <link rel="manifest" href="manifest.json?v=2.2.1">
 </head>
 <body>
   <!-- Layer di Sfondo Animato Fluido con Fallback GPU -->
@@ -207,7 +207,7 @@
         <!-- Griglia Effetti Dinamici -->
         <div class="effects-grid">
           
-          <!-- POLIZIA: ROSSO -> NERO -> BLU (3 FASI CONTINUE, ZERO VERDE) -->
+          <!-- POLIZIA: ROSSO -> NERO -> BLU -> NERO (4 FASI SIMMETRICHE, ZERO VERDE) -->
           <button class="effect-card effect-police" id="btnEffectPolice" data-effect="police">
             <div class="effect-preview-badge police-badge">
               <span class="dot-red"></span>
@@ -215,7 +215,7 @@
             </div>
             <div class="effect-details">
               <span class="effect-title">POLIZIA (ROSSO &amp; BLU)</span>
-              <span class="effect-desc">Ciclo continuo 3-fasi: Rosso puro -> Nero -> Blu puro</span>
+              <span class="effect-desc">Ciclo continuo 4-fasi: Rosso puro -> Nero -> Blu puro -> Nero (timing uguali)</span>
             </div>
           </button>
 
@@ -609,6 +609,6 @@
   </div>
 
   <!-- Script Applicativi Modulari -->
-  <script type="module" src="js/app.js?v=2.2.0"></script>
+  <script type="module" src="js/app.js?v=2.2.1"></script>
 </body>
 </html>
