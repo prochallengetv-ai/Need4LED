@@ -1,10 +1,13 @@
 /**
- * Need4Led — Test Suite Protocolli BLE & Modelli Preset
+ * Need4Led — Test Suite Protocolli BLE, Modelli Preset & Release v2.3-ultimate
  * Verifica frame esadecimali generati per LotusLantern (Standard e V2), Triones,
- * calibrazione ordine canali (GRB, BRG...), sequenza strobo Polizia (3 fasi senza verde)
- * e modelli di preset pre-calibrati.
+ * calibrazione ordine canali (GRB, BRG...), sequenza strobo Polizia simmetrica,
+ * frame zero-light di spegnimento rapido (7E 00 05 03 00 00 00 00 EF) e controllo zero-emoji.
  */
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import {
   Protocols,
   bytesToHex,
@@ -17,6 +20,11 @@ import {
   PRESET_MODELS,
   PRESET_MODEL_CONFIGS
 } from '../js/protocols.js';
+import { WakeLockManager } from '../js/app.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
 
 let totalTests = 0;
 let passedTests = 0;
@@ -36,7 +44,7 @@ function assertEqual(actual, expected, testName) {
   }
 }
 
-console.log('\n=== ESECUZIONE TEST PROTOCOLLI BLE (Need4Led) ===\n');
+console.log('\n=== ESECUZIONE TEST SUITE NEED4LED (v2.3-ultimate) ===\n');
 
 // 1. Test Utilità di conversione Hex
 console.log('1. Test Utilità Hex:');
@@ -63,37 +71,31 @@ assertEqual(
   '7E 00 04 F0 00 01 FF 00 EF',
   'LotusLantern Standard Power ON'
 );
-
 assertEqual(
   LotusStandardEncoder.power(false),
   '7E 00 04 00 00 00 FF 00 EF',
   'LotusLantern Standard Power OFF'
 );
-
 assertEqual(
   LotusStandardEncoder.color(255, 0, 0, 'RGB'),
   '7E 00 05 03 FF 00 00 00 EF',
   'LotusLantern Standard Colore Rosso (#FF0000)'
 );
-
 assertEqual(
   LotusStandardEncoder.color(255, 0, 0, 'GRB'),
   '7E 00 05 03 00 FF 00 00 EF',
   'LotusLantern Standard Colore Rosso con pinout GRB'
 );
-
 assertEqual(
   LotusStandardEncoder.color(0, 255, 255, 'RGB'),
   '7E 00 05 03 00 FF FF 00 EF',
   'LotusLantern Standard Colore Cyber Ciano (#00FFFF)'
 );
-
 assertEqual(
   LotusStandardEncoder.brightness(100),
   '7E 00 01 64 00 00 00 00 EF',
   'LotusLantern Standard Luminosità 100% (0x64)'
 );
-
 assertEqual(
   LotusStandardEncoder.speed(80),
   '7E 00 02 50 00 00 00 00 EF',
@@ -107,13 +109,11 @@ assertEqual(
   '7E 00 03 00 01 00 00 00 EF',
   'ELK-BLEDOM Grayscale / Pure White Mode'
 );
-
 assertEqual(
   LotusStandardEncoder.whiteCold(),
   '7E 00 03 80 02 00 00 00 EF',
   'ELK-BLEDOM Cold White Mode (6500K)'
 );
-
 assertEqual(
   LotusStandardEncoder.whiteWarm(),
   '7E 00 03 8A 02 00 00 00 EF',
@@ -147,7 +147,7 @@ assertEqual(
 );
 
 // 7. Test Sequenza Strobo Polizia a 4 Fasi Simmetriche & Esclusione Canale Verde
-console.log('\n7. Test Sequenza Strobo Polizia (4 fasi simmetriche Rosso-Nero-Blu-Nero, timing uguali, zero verde):');
+console.log('\n7. Test Sequenza Strobo Polizia (Rosso-Nero-Blu-Nero, timing uguali, zero verde):');
 assertEqual(POLICE_SEQUENCE.length, 4, 'Sequenza Polizia ha esattamente 4 fasi simmetriche');
 assertEqual(
   `${POLICE_SEQUENCE[0].r},${POLICE_SEQUENCE[0].g},${POLICE_SEQUENCE[0].b}`,
@@ -170,14 +170,31 @@ assertEqual(
   'Fase 4 Polizia: Nero / Spento (0, 0, 0)'
 );
 
-// Verifica che con pinout BRG nessun frame di Polizia attivi il canale verde (prevenendo il giallo)
-const policeFrame0_BRG = remapColorChannels(POLICE_SEQUENCE[0].r, POLICE_SEQUENCE[0].g, POLICE_SEQUENCE[0].b, 'BRG');
-assertEqual(policeFrame0_BRG[2], 0, 'Fase 1 BRG: Canale Verde rigorosamente a 0');
-const policeFrame2_BRG = remapColorChannels(POLICE_SEQUENCE[2].r, POLICE_SEQUENCE[2].g, POLICE_SEQUENCE[2].b, 'BRG');
-assertEqual(policeFrame2_BRG[2], 0, 'Fase 3 BRG: Canale Verde rigorosamente a 0');
+// Frame ELK con profilo BRG attivo per tutti gli stati
+console.log('\n8. Test Frame Esadecimali ELK con Profilo BRG:');
+const frameRossoBRG = LotusStandardEncoder.color(255, 0, 0, 'BRG');
+assertEqual(
+  frameRossoBRG,
+  '7E 00 05 03 00 FF 00 00 EF',
+  'Frame Rosso (255,0,0) BRG -> Byte 5 = 0xFF, Canale Verde (Byte 6) = 0x00'
+);
 
-// 8. Test Modelli di Preset Pre-calibrati
-console.log('\n8. Test Modelli di Preset:');
+const frameNeroBRG = LotusStandardEncoder.color(0, 0, 0, 'BRG');
+assertEqual(
+  frameNeroBRG,
+  '7E 00 05 03 00 00 00 00 EF',
+  'Frame Nero (0,0,0) BRG -> Zero-light emissione istantanea senza disconnessione GATT'
+);
+
+const frameBluBRG = LotusStandardEncoder.color(0, 0, 255, 'BRG');
+assertEqual(
+  frameBluBRG,
+  '7E 00 05 03 FF 00 00 00 EF',
+  'Frame Blu (0,0,255) BRG -> Byte 4 = 0xFF, Canale Verde (Byte 6) = 0x00'
+);
+
+// 9. Test Modelli di Preset Pre-calibrati
+console.log('\n9. Test Modelli di Preset:');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_SINGLE]), true, 'Modello Strobo Singolo presente');
 assertEqual(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_SINGLE].intervalMs, 160, 'Strobo Singolo intervalMs = 160ms');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_POLICE]), true, 'Modello Strobo Alternato (Polizia) presente');
@@ -185,6 +202,41 @@ assertEqual(PRESET_MODEL_CONFIGS[PRESET_MODELS.STROBE_POLICE].intervalMs, 160, '
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.ALTERNATE_DIRECT]), true, 'Modello Alternato Diretto presente');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.BREATHING]), true, 'Modello Breathing presente');
 assertEqual(Boolean(PRESET_MODEL_CONFIGS[PRESET_MODELS.STATIC_PURE]), true, 'Modello Statico Puro presente');
+
+// 10. Test Screen Wake Lock API Manager
+console.log('\n10. Test Screen Wake Lock Manager:');
+const wakeMgr = new WakeLockManager();
+assertEqual(typeof wakeMgr.acquire, 'function', 'WakeLockManager.acquire è una funzione');
+assertEqual(typeof wakeMgr.release, 'function', 'WakeLockManager.release è una funzione');
+assertEqual(typeof wakeMgr.updateState, 'function', 'WakeLockManager.updateState è una funzione');
+
+// 11. Scansione Regex Zero Emoji su tutto il repository
+console.log('\n11. Scansione Zero Emoji nel Codebase:');
+const emojiRegex = /(\p{Extended_Pictographic}|\p{Emoji_Presentation})/u;
+const filesToScan = [
+  'index.html',
+  'manifest.json',
+  'sw.js',
+  'css/style.css',
+  'js/app.js',
+  'js/ble-manager.js',
+  'js/protocols.js',
+  'js/ui-controller.js'
+];
+
+let foundEmojis = 0;
+for (const relFile of filesToScan) {
+  const fullPath = path.join(rootDir, relFile);
+  if (fs.existsSync(fullPath)) {
+    const content = fs.readFileSync(fullPath, 'utf8');
+    const matches = content.match(new RegExp(emojiRegex.source, 'gu'));
+    if (matches && matches.length > 0) {
+      foundEmojis += matches.length;
+      console.error(`  [WARN] Emoji trovate in ${relFile}: ${matches.join(', ')}`);
+    }
+  }
+}
+assertEqual(foundEmojis, 0, `Scansione Zero Emoji completata (${filesToScan.length} file ispezionati)`);
 
 console.log(`\n========================================`);
 console.log(`RISULTATO TEST: ${passedTests}/${totalTests} superati con successo.`);

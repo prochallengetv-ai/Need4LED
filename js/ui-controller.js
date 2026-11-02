@@ -20,8 +20,9 @@ import {
 } from './protocols.js';
 
 export class UIController {
-  constructor(bleManager) {
+  constructor(bleManager, wakeLockManager = null) {
     this.ble = bleManager;
+    this.wakeLock = wakeLockManager;
     this.currentProtocol = Protocols.LOTUS_STANDARD;
     this.encoder = getEncoder(this.currentProtocol);
 
@@ -71,6 +72,8 @@ export class UIController {
     this.statusDot = document.getElementById('statusDot');
     this.statusLabel = document.getElementById('statusLabel');
     this.autoConnectPill = document.getElementById('autoConnectPill');
+    this.wakeLockPill = document.getElementById('wakeLockPill');
+    this.settingsWakeLockBadge = document.getElementById('settingsWakeLockBadge');
     this.deviceSummary = document.getElementById('deviceSummary');
     this.btnConnect = document.getElementById('btnConnect');
     this.connectText = document.getElementById('connectText');
@@ -160,6 +163,31 @@ export class UIController {
 
   _sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  _notifyWakeLock() {
+    if (this.wakeLock && typeof this.wakeLock.updateState === 'function') {
+      this.wakeLock.updateState({
+        isConnected: Boolean(this.ble && this.ble.isConnected),
+        isEffectRunning: Boolean(this.activeEffect)
+      });
+    }
+  }
+
+  updateWakeLockUI(isActive, label = 'SCHERMO SEMPRE ATTIVO: ON') {
+    if (this.wakeLockPill) {
+      if (isActive) {
+        this.wakeLockPill.textContent = 'SCHERMO SEMPRE ATTIVO: ON';
+        this.wakeLockPill.classList.remove('off');
+      } else {
+        this.wakeLockPill.textContent = 'SCHERMO: STANDBY';
+        this.wakeLockPill.classList.add('off');
+      }
+    }
+    if (this.settingsWakeLockBadge) {
+      this.settingsWakeLockBadge.textContent = isActive ? 'SCHERMO SEMPRE ATTIVO: ON' : 'SCHERMO: STANDBY';
+      this.settingsWakeLockBadge.style.color = isActive ? 'var(--neon-cyan)' : 'var(--text-muted)';
+    }
   }
 
   async _initAutoConnect() {
@@ -670,6 +698,10 @@ export class UIController {
     this.activeEffect = effectName;
     const loopId = ++this.currentLoopId;
 
+    this.presetButtons.forEach(btn => btn.classList.remove('active-selected'));
+    document.querySelectorAll('.custom-preset-card').forEach(card => card.classList.remove('active-selected'));
+    this._notifyWakeLock();
+
     if (this.activeEffectIndicator) {
       this.activeEffectIndicator.textContent = 'ATTIVO';
       this.activeEffectIndicator.style.background = 'rgba(0, 240, 255, 0.25)';
@@ -720,6 +752,12 @@ export class UIController {
 
     let step = 0;
     while (this.activeEffect === 'police' && this.currentLoopId === loopId) {
+      // Auto-pausa su disconnessione e auto-ripresa alla riconnessione watchdog
+      while (!this.ble.isConnected && this.activeEffect === 'police' && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== 'police' || this.currentLoopId !== loopId) break;
+
       const phase = step % 4;
       const current = POLICE_SEQUENCE[phase];
 
@@ -752,6 +790,11 @@ export class UIController {
 
     let on = false;
     while (this.activeEffect === 'white_strobe' && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === 'white_strobe' && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== 'white_strobe' || this.currentLoopId !== loopId) break;
+
       on = !on;
       if (on) {
         await this.sendColorCommandDirect(255, 255, 255);
@@ -773,6 +816,11 @@ export class UIController {
 
     let on = false;
     while (this.activeEffect === 'amber_hazard' && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === 'amber_hazard' && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== 'amber_hazard' || this.currentLoopId !== loopId) break;
+
       on = !on;
       if (on) {
         await this.sendColorCommandDirect(255, 140, 0);
@@ -794,6 +842,11 @@ export class UIController {
 
     let hue = 0;
     while (this.activeEffect === 'rainbow' && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === 'rainbow' && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== 'rainbow' || this.currentLoopId !== loopId) break;
+
       hue = (hue + 16) % 360;
       const [r, g, b] = this._hslToRgb(hue / 360, 1, 0.5);
       await this.sendColorCommandDirect(r, g, b);
@@ -811,6 +864,11 @@ export class UIController {
 
     let t = 0;
     while (this.activeEffect === 'cyber_breath' && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === 'cyber_breath' && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== 'cyber_breath' || this.currentLoopId !== loopId) break;
+
       const factor = (Math.sin(t) + 1) / 2;
       const r = Math.round(factor * 191);
       const g = Math.round((1 - factor) * 240 + factor * 90);
@@ -835,6 +893,11 @@ export class UIController {
     ];
     let pIndex = 0;
     while (this.activeEffect === 'party_flash' && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === 'party_flash' && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== 'party_flash' || this.currentLoopId !== loopId) break;
+
       const [r, g, b] = partyColors[pIndex % partyColors.length];
       await this.sendColorCommandDirect(r, g, b);
       pIndex++;
@@ -847,6 +910,12 @@ export class UIController {
     this.currentLoopId++;
     this.activeEffect = null;
 
+    if (this.ble && typeof this.ble.clearSendQueue === 'function') {
+      this.ble.clearSendQueue();
+    }
+
+    this._notifyWakeLock();
+
     if (resetIndicator) {
       if (this.activeEffectIndicator) {
         this.activeEffectIndicator.textContent = 'STATICO';
@@ -857,6 +926,9 @@ export class UIController {
         this.effectControlBar.style.display = 'none';
       }
       this.effectCards.forEach(c => c.classList.remove('active-running'));
+      this.presetButtons.forEach(btn => btn.classList.remove('active-selected'));
+      document.querySelectorAll('.custom-preset-card').forEach(card => card.classList.remove('active-selected'));
+
       if (this.ambientTop) {
         const hex = this.colorHexText ? this.colorHexText.textContent : '#00F0FF';
         this.ambientTop.style.background = `radial-gradient(circle, ${hex}28 0%, rgba(0, 0, 0, 0) 70%)`;
@@ -870,6 +942,14 @@ export class UIController {
   applyPreset(presetKey) {
     this.vibrate(20);
     this.stopDynamicEffect();
+
+    this.presetButtons.forEach(btn => {
+      if (btn.getAttribute('data-preset') === presetKey) {
+        btn.classList.add('active-selected');
+      } else {
+        btn.classList.remove('active-selected');
+      }
+    });
 
     switch (presetKey) {
       case 'white':
@@ -1023,6 +1103,14 @@ export class UIController {
     this.vibrate(20);
     this.stopDynamicEffect();
 
+    document.querySelectorAll('.custom-preset-card').forEach(card => {
+      if (card.getAttribute('data-id') === String(preset.id)) {
+        card.classList.add('active-selected');
+      } else {
+        card.classList.remove('active-selected');
+      }
+    });
+
     if (preset.model === PRESET_MODELS.STATIC_PURE) {
       this.updateColorValues(preset.color1.r, preset.color1.g, preset.color1.b, true);
       this.showToast(`PRESET ATTIVATO: ${preset.name}`);
@@ -1032,6 +1120,7 @@ export class UIController {
     // Modalità asincrona con timing simmetrico garantito
     this.activeEffect = `custom_${preset.id}`;
     const loopId = ++this.currentLoopId;
+    this._notifyWakeLock();
 
     if (this.activeEffectIndicator) {
       this.activeEffectIndicator.textContent = 'ATTIVO';
@@ -1063,6 +1152,11 @@ export class UIController {
     const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
     let step = 0;
     while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== `custom_${preset.id}` || this.currentLoopId !== loopId) break;
+
       const phase = step % 4;
       if (phase === 0) {
         await this.sendColorCommandDirect(preset.color1.r, preset.color1.g, preset.color1.b);
@@ -1082,6 +1176,11 @@ export class UIController {
   async _runPresetStrobeSingle(loopId, preset) {
     let on = false;
     while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== `custom_${preset.id}` || this.currentLoopId !== loopId) break;
+
       on = !on;
       if (on) {
         await this.sendColorCommandDirect(preset.color1.r, preset.color1.g, preset.color1.b);
@@ -1099,6 +1198,11 @@ export class UIController {
     const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
     let toggle = false;
     while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== `custom_${preset.id}` || this.currentLoopId !== loopId) break;
+
       toggle = !toggle;
       const activeC = toggle ? preset.color1 : c2;
       await this.sendColorCommandDirect(activeC.r, activeC.g, activeC.b);
@@ -1113,6 +1217,11 @@ export class UIController {
     const c2 = preset.color2 || { r: 0, g: 0, b: 255 };
     let t = 0;
     while (this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+      while (!this.ble.isConnected && this.activeEffect === `custom_${preset.id}` && this.currentLoopId === loopId) {
+        await this._sleep(350);
+      }
+      if (this.activeEffect !== `custom_${preset.id}` || this.currentLoopId !== loopId) break;
+
       const factor = (Math.sin(t) + 1) / 2;
       const r = Math.round(preset.color1.r * (1 - factor) + c2.r * factor);
       const g = Math.round(preset.color1.g * (1 - factor) + c2.g * factor);
@@ -1156,6 +1265,7 @@ export class UIController {
 
       const card = document.createElement('div');
       card.className = 'custom-preset-card';
+      card.setAttribute('data-id', preset.id);
 
       const dualSwatch = c2Hex
         ? `<div class="preset-dual-swatches">
@@ -1239,6 +1349,7 @@ export class UIController {
       if (this.connectIcon) this.connectIcon.textContent = 'STOP';
       const devName = this.ble.device ? this.ble.device.name || 'LED Controller' : 'LED';
       this.deviceSummary.textContent = `${devName.toUpperCase()} [${this.channelOrder}]`;
+      this._notifyWakeLock();
     } else if (state === 'disconnected') {
       this.btnConnect.classList.remove('connected-state');
       this.connectText.textContent = 'CONNETTI STRISCE LED';
@@ -1246,7 +1357,10 @@ export class UIController {
       this.deviceSummary.textContent = 'NESSUN CONTROLLER ATTIVO';
       this.btnPowerOn.classList.remove('active');
       this.btnPowerOff.classList.remove('active');
-      this.stopDynamicEffect();
+      if (this.ble.userExplicitDisconnect) {
+        this.stopDynamicEffect();
+      }
+      this._notifyWakeLock();
     }
   }
 

@@ -9,8 +9,8 @@
   <meta name="theme-color" content="#000000">
   <title>Need4Led — Bluetooth LED Cockpit</title>
   
-  <link rel="stylesheet" href="css/style.css?v=2.2.2">
-  <link rel="manifest" href="manifest.json?v=2.2.2">
+  <link rel="stylesheet" href="css/style.css?v=2.3.0">
+  <link rel="manifest" href="manifest.json?v=2.3.0">
 </head>
 <body>
   <!-- Layer di Sfondo Animato Fluido con Fallback GPU -->
@@ -33,7 +33,7 @@
       <div class="brand-container">
         <span class="brand-indicator-dot"></span>
         <h1 class="brand-title">NEED4LED</h1>
-        <span class="brand-version-pill">V2.2</span>
+        <span class="brand-version-pill">V2.3</span>
       </div>
       <div class="header-actions">
         <button class="btn-header-link" id="btnHeaderSettings" aria-label="Impostazioni">
@@ -50,6 +50,7 @@
           <span id="statusLabel">NON CONNESSO</span>
         </div>
         <div class="auto-connect-pill" id="autoConnectPill">AUTO: ON</div>
+        <div class="wake-lock-pill" id="wakeLockPill">SCHERMO SEMPRE ATTIVO: ON</div>
       </div>
       <div class="device-details-text" id="deviceSummary">NESSUN CONTROLLER ATTIVO</div>
 
@@ -513,6 +514,15 @@
         </div>
       </section>
 
+      <!-- Stato Hardware Display & Screen Wake Lock -->
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>STATO DISPLAY &amp; SCREEN WAKE LOCK</span>
+          <span class="badge-pill" id="settingsWakeLockBadge">SCHERMO SEMPRE ATTIVO: ON</span>
+        </div>
+        <p class="section-desc">Screen Wake Lock API attiva per prevenire lo spegnimento dello schermo durante la guida e mantenere attive le sequenze strobo ad alta frequenza su iOS Bluefy.</p>
+      </section>
+
       <!-- Diagnostica BLE & Protocol Switcher -->
       <section class="glass-card">
         <div class="control-section-title">
@@ -598,7 +608,7 @@
           <div class="terminal-window" id="termWindow">
             <div class="term-entry">
               <span class="term-time">[--:--:--]</span>
-              <span class="term-info">[INFO] Need4Led v2.2 inizializzato. Pronto.</span>
+              <span class="term-info">[INFO] Need4Led v2.3-ultimate inizializzato. Pronto.</span>
             </div>
           </div>
         </div>
@@ -609,6 +619,6 @@
   </div>
 
   <!-- Script Applicativi Modulari -->
-  <script type="module" src="js/app.js?v=2.2.2"></script>
+  <script type="module" src="js/app.js?v=2.3.0"></script>
 </body>
 </html>

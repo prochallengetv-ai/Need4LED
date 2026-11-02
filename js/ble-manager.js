@@ -346,6 +346,19 @@ export class BLEManager {
   }
 
   /**
+   * Svuota la coda di trasmissione GATT e cancella eventuali timer pendenti.
+   * Utilizzato prima di avviare un nuovo effetto dinamico o applicare un colore statico.
+   */
+  clearSendQueue() {
+    this.sendQueue = null;
+    if (this.sendTimer) {
+      clearTimeout(this.sendTimer);
+      this.sendTimer = null;
+    }
+    this.isTransmitting = false;
+  }
+
+  /**
    * Scrittura diretta immediata e non throttled per loop di animazione asincroni deterministici.
    * Restituisce una Promise che si risolve non appena il pacchetto è accettato dal buffer radio BLE.
    */
