@@ -54,10 +54,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Registrazione Service Worker per Progressive Web App (se supportato)
+  // Registrazione Service Worker per Progressive Web App (con controllo forzato aggiornamenti)
   if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js').catch(() => {
-      // SW non critico per il funzionamento
-    });
+    navigator.serviceWorker.register('sw.js?v=2.0.1').then((reg) => {
+      reg.update();
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+              window.location.reload();
+            }
+          });
+        }
+      });
+    }).catch(() => {});
   }
 });
