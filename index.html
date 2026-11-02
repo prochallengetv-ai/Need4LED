@@ -9,8 +9,8 @@
   <meta name="theme-color" content="#000000">
   <title>Need4Led — Controllo Strisce Bluetooth</title>
   
-  <link rel="stylesheet" href="css/style.css?v=2.0.1">
-  <link rel="manifest" href="manifest.json?v=2.0.1">
+  <link rel="stylesheet" href="css/style.css?v=2.0.2">
+  <link rel="manifest" href="manifest.json?v=2.0.2">
 </head>
 <body>
   <!-- Effetti di Luce Ambientale di Sfondo -->
@@ -50,8 +50,9 @@
           <span class="status-dot" id="statusDot"></span>
           <span id="statusLabel">Non connesso</span>
         </div>
-        <div class="device-details-text" id="deviceSummary">Nessun controller attivo</div>
+        <div class="auto-connect-pill" id="autoConnectPill">⚡ Auto-Associazione: ON</div>
       </div>
+      <div class="device-details-text" id="deviceSummary">Nessun controller attivo</div>
 
       <button class="btn-connect-primary" id="btnConnect">
         <span id="connectIcon">🔗</span>
@@ -197,6 +198,18 @@
         </div>
         <p class="section-desc">Animazioni ad alta visibilità per eventi, stile e segnalazione.</p>
 
+        <!-- Box Auto-Fix Calibrazione Polizia -->
+        <div class="color-fix-card" id="colorFixCard">
+          <div class="color-fix-header">
+            <span class="color-fix-icon">🔄</span>
+            <div>
+              <div class="color-fix-title">Calibrazione Rapida Polizia</div>
+              <div class="color-fix-desc">Lampeggia <strong>Blu &amp; Giallo</strong> invece di <strong>Blu &amp; Rosso</strong>?</div>
+            </div>
+          </div>
+          <button class="btn-fix-brg" id="btnFixBrg">⚡ Correggi in Rosso &amp; Blu Puro</button>
+        </div>
+
         <!-- Griglia Effetti Dinamici -->
         <div class="effects-grid">
           
@@ -329,10 +342,13 @@
       <section class="glass-card calibration-card">
         <div class="control-section-title">
           <span class="title-with-icon">🎯 <strong>Calibrazione Colore Reale</strong></span>
-          <span class="badge-pill" id="badgeCurrentOrder">ORDINE: RGB</span>
+          <span class="badge-pill" id="badgeCurrentOrder">ORDINE: BRG</span>
+        </div>
+        <div class="device-profile-badge">
+          <span>Veicolo Connesso: <strong id="deviceProfileName">Nessun veicolo attivo</strong></span>
         </div>
         <p class="section-desc">
-          Se premendo <strong>Rosso</strong> la tua striscia si accende di <strong>Verde</strong> o <strong>Blu</strong>, i pin fisici della tua striscia usano un ordine diverso. Esegui il test qui sotto e seleziona la combinazione esatta:
+          Se premendo <strong>Rosso</strong> la tua striscia si accende di <strong>Verde</strong> o <strong>Blu</strong>, i pin fisici della striscia usano un ordine diverso. Esegui il test rapido per calibrare l'hardware:
         </p>
 
         <!-- Test Rapido Canali -->
@@ -342,13 +358,32 @@
           <button class="btn-test-ch btn-test-b" id="btnTestBlue">🔵 Test Blu</button>
         </div>
 
-        <!-- Selettore Ordine Canali -->
-        <div class="diag-field-group" style="margin-top: 8px;">
-          <label class="diag-field-label" for="selectChannelOrder">Seleziona Ordine Pinout Hardware</label>
+        <!-- Wizard Intelligente: "Cosa vedi sul veicolo?" -->
+        <div class="wizard-box">
+          <div class="wizard-title">Dopo aver premuto "🔴 Test Rosso", cosa vedi sulle strisce?</div>
+          <div class="wizard-options-grid">
+            <button class="btn-wizard-opt" id="btnSawRed">
+              <span class="wizard-opt-dot" style="background: #FF3B30;"></span>
+              <span>Vedo Rosso (Corretto)</span>
+            </button>
+            <button class="btn-wizard-opt" id="btnSawGreen">
+              <span class="wizard-opt-dot" style="background: #30D158;"></span>
+              <span>Vedo Verde (Imposta GRB)</span>
+            </button>
+            <button class="btn-wizard-opt" id="btnSawBlue">
+              <span class="wizard-opt-dot" style="background: #0A84FF;"></span>
+              <span>Vedo Blu (Imposta BRG)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selettore Ordine Canali Manuale -->
+        <div class="diag-field-group" style="margin-top: 10px;">
+          <label class="diag-field-label" for="selectChannelOrder">Oppure seleziona manualmente l'ordine pinout</label>
           <select class="diag-select" id="selectChannelOrder">
-            <option value="RGB" selected>RGB — Standard</option>
-            <option value="GRB">GRB — Molto diffuso su controller cinesi (Verde/Rosso invertiti)</option>
-            <option value="BRG">BRG — Diffuso su strisce aftermarket</option>
+            <option value="BRG" selected>BRG — Ottimale per controller ELK (Rosso/Blu reali)</option>
+            <option value="GRB">GRB — Diffuso su strisce con Verde/Rosso invertiti</option>
+            <option value="RGB">RGB — Sequenza Standard</option>
             <option value="BGR">BGR — Blu e Rosso invertiti</option>
             <option value="RBG">RBG — Rosso, Blu, Verde</option>
             <option value="GBR">GBR — Verde, Blu, Rosso</option>
@@ -478,6 +513,6 @@
   </div>
 
   <!-- Script Applicativi Modulari -->
-  <script type="module" src="js/app.js?v=2.0.1"></script>
+  <script type="module" src="js/app.js?v=2.0.2"></script>
 </body>
 </html>

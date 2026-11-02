@@ -1,7 +1,8 @@
 /**
  * Need4Led — BLE Manager
- * Gestione connessione Web Bluetooth Low Energy, scoperta GATT,
- * scrittura resiliente (withoutResponse / withResponse) e rate-limiting.
+ * Gestione connessione Web Bluetooth Low Energy, auto-associazione all'avvio,
+ * recupero dispositivi autorizzati, auto-reconnect watchdog, profili per dispositivo
+ * e trasmissione a rate-limiting controllato.
  */
 
 export class BLEManager {
@@ -10,7 +11,8 @@ export class BLEManager {
       onStatusChange: () => {},
       onLog: () => {},
       onGattDiscovered: () => {},
-      throttleIntervalMs: 65 // intervallo minimo tra pacchetti successivi
+      onDevicePaired: () => {},
+      throttleIntervalMs: 60 // intervallo minimo tra pacchetti successivi
     }, options);
 
     this.device = null;
@@ -21,13 +23,19 @@ export class BLEManager {
     this.writeMode = 'auto'; // 'auto' | 'withoutResponse' | 'withResponse'
     this.isConnected = false;
 
+    // Auto-reconnect watchdog
+    this.autoReconnectEnabled = true;
+    this.reconnectTimer = null;
+    this.isReconnecting = false;
+    this.userExplicitDisconnect = false;
+
     // Rate limiter & queue
     this.sendQueue = null;
     this.lastSendTime = 0;
     this.sendTimer = null;
     this.isTransmitting = false;
 
-    // UUID noti comunemente usati da controller LED
+    // UUID noti comunemente usati da controller LED (LotusLantern / ELK-BLEDOM, Triones)
     this.knownServiceUuids = [
       '0000fff0-0000-1000-8000-00805f9b34fb', // LotusLantern / ELK-BLEDOM
       '0000ffd5-0000-1000-8000-00805f9b34fb', // Triones / HappyLighting
@@ -56,23 +64,75 @@ export class BLEManager {
   }
 
   /**
-   * Avvia scansione Web Bluetooth
-   * @param {boolean} acceptAll - se true usa acceptAllDevices: true con optionalServices
+   * Tenta l'auto-associazione all'avvio dell'applicazione.
+   * Utilizza navigator.bluetooth.getDevices() per connettersi istantaneamente
+   * all'ultimo dispositivo associato senza mostrare finestre modali di pairing.
+   */
+  async tryAutoConnect() {
+    if (!this.isSupported()) return false;
+    if (this.isConnected || this.isReconnecting) return false;
+
+    // Verifica supporto getDevices()
+    if (typeof navigator.bluetooth.getDevices !== 'function') {
+      this.log('INFO', '', 'getDevices() non supportato dal browser. Sarà necessaria la selezione manuale al primo avvio.');
+      return false;
+    }
+
+    try {
+      this.setStatus('scanning', 'Ricerca dispositivo associato...');
+      this.log('INFO', '', 'Verifica dispositivi precedentemente autorizzati...');
+
+      const devices = await navigator.bluetooth.getDevices();
+      if (!devices || devices.length === 0) {
+        this.setStatus('disconnected', 'Pronto per la connessione');
+        this.log('INFO', '', 'Nessun dispositivo precedentemente autorizzato trovato.');
+        return false;
+      }
+
+      const lastId = localStorage.getItem('need4led_last_device_id');
+      let targetDevice = null;
+
+      if (lastId) {
+        targetDevice = devices.find(d => d.id === lastId);
+      }
+      if (!targetDevice) {
+        targetDevice = devices[0];
+      }
+
+      this.log('INFO', '', `Dispositivo autorizzato trovato: "${targetDevice.name || 'LED'}" (${targetDevice.id}). Auto-connessione in corso...`);
+      this.setStatus('connecting', `Auto-connessione a ${targetDevice.name || 'LED'}...`);
+
+      this.device = targetDevice;
+      this.device.addEventListener('gattserverdisconnected', () => this.handleDisconnected());
+
+      await this.connect();
+      return true;
+    } catch (err) {
+      this.log('INFO', '', `Auto-connessione non riuscita: ${err.message}. In attesa di tocco utente.`);
+      this.setStatus('disconnected', 'Tocca "Connetti Strisce LED"');
+      return false;
+    }
+  }
+
+  /**
+   * Avvia scansione manuale Web Bluetooth
    */
   async requestDevice(acceptAll = true) {
     if (!this.isSupported()) {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const errMsg = isIOS
-        ? 'Web Bluetooth non è supportato da Safari. Apri questa pagina tramite l\'app Bluefy su iPhone.'
+        ? 'Web Bluetooth non è supportato da Safari nativo. Apri questa pagina tramite l\'app Bluefy su iPhone.'
         : 'Web Bluetooth non è disponibile su questo browser. Usa Google Chrome o Microsoft Edge.';
       this.log('ERROR', '', errMsg);
       this.setStatus('error', errMsg);
       throw new Error(errMsg);
     }
 
+    this.userExplicitDisconnect = false;
+
     try {
-      this.setStatus('scanning', 'Ricerca dispositivi LED nelle vicinanze...');
+      this.setStatus('scanning', 'Ricerca controller LED nelle vicinanze...');
       this.log('INFO', '', 'Apertura dialogo scansione BLE...');
 
       const requestOptions = acceptAll
@@ -101,8 +161,8 @@ export class BLEManager {
       return device;
     } catch (err) {
       if (err.name === 'NotFoundError') {
-        this.setStatus('disconnected', 'Scansione annullata dall\'utente.');
-        this.log('INFO', '', 'Scansione annullata.');
+        this.setStatus('disconnected', 'Scansione annullata.');
+        this.log('INFO', '', 'Scansione annullata dall\'utente.');
       } else {
         this.setStatus('error', `Errore selezione dispositivo: ${err.message}`);
         this.log('ERROR', '', err.message);
@@ -116,20 +176,37 @@ export class BLEManager {
       throw new Error('Nessun dispositivo selezionato.');
     }
 
+    this._stopReconnectWatchdog();
+
     try {
       this.setStatus('connecting', `Connessione a ${this.device.name || 'Dispositivo'}...`);
       this.log('INFO', '', 'Connessione al server GATT in corso...');
 
       this.server = await this.device.gatt.connect();
       this.isConnected = true;
+      this.userExplicitDisconnect = false;
       this.log('INFO', '', 'GATT Server connesso con successo!');
+
+      // Salva come ultimo dispositivo associato per future sessioni
+      localStorage.setItem('need4led_last_device_id', this.device.id);
+      if (this.device.name) {
+        localStorage.setItem('need4led_last_device_name', this.device.name);
+      }
 
       await this.discoverServicesAndCharacteristics();
       this.setStatus('connected', `Connesso a ${this.device.name || 'LED Controller'}`);
+
+      // Notifica pairing all'UI
+      this.options.onDevicePaired(this.device);
     } catch (err) {
       this.isConnected = false;
-      this.setStatus('error', `Errore di connessione: ${err.message}`);
+      this.setStatus('error', `Errore connessione: ${err.message}`);
       this.log('ERROR', '', `Fallimento connessione GATT: ${err.message}`);
+      
+      // Se non è stata disconnessione manuale, pianifica retry
+      if (!this.userExplicitDisconnect && this.autoReconnectEnabled) {
+        this._scheduleReconnect();
+      }
       throw err;
     }
   }
@@ -141,19 +218,16 @@ export class BLEManager {
     this.activeCharacteristic = null;
 
     try {
-      // 1. Prova prima con il servizio primario principale noto (0xFFF0 o 0xFFD5)
       let primaryServices = [];
       try {
         primaryServices = await this.server.getPrimaryServices();
       } catch (e) {
-        this.log('INFO', '', `getPrimaryServices generale non consentito o fallito (${e.message}). Tento servizi noti singoli.`);
+        this.log('INFO', '', `getPrimaryServices generale fallito (${e.message}). Tento scansione UUID singoli noti.`);
         for (const uuid of this.knownServiceUuids) {
           try {
             const s = await this.server.getPrimaryService(uuid);
             primaryServices.push(s);
-          } catch (_) {
-            // Ignora se non presente
-          }
+          } catch (_) {}
         }
       }
 
@@ -180,8 +254,6 @@ export class BLEManager {
             };
             sEntry.characteristics.push(cEntry);
 
-            // Auto-selezione caratteristica attiva:
-            // Cerca FFF3 o FFD9 o una caratteristica con capacità di scrittura
             const isFff3 = char.uuid.toLowerCase().includes('fff3');
             const isFfd9 = char.uuid.toLowerCase().includes('ffd9');
             const canWrite = char.properties.write || char.properties.writeWithoutResponse;
@@ -193,7 +265,7 @@ export class BLEManager {
             }
           }
         } catch (charErr) {
-          this.log('ERROR', '', `Errore lettura caratteristiche per servizio ${service.uuid}: ${charErr.message}`);
+          this.log('ERROR', '', `Errore lettura caratteristiche per ${service.uuid}: ${charErr.message}`);
         }
 
         this.discoveredGatt.push(sEntry);
@@ -202,7 +274,7 @@ export class BLEManager {
       this.options.onGattDiscovered(this.discoveredGatt);
 
       if (!this.activeCharacteristic) {
-        this.log('ERROR', '', 'Attenzione: nessuna caratteristica con permessi di scrittura individuata nei servizi scansionati!');
+        this.log('ERROR', '', 'Attenzione: nessuna caratteristica con permessi di scrittura individuata!');
       }
     } catch (err) {
       this.log('ERROR', '', `Errore scansione GATT: ${err.message}`);
@@ -215,7 +287,7 @@ export class BLEManager {
       for (const c of s.characteristics) {
         if (c.uuid.toLowerCase() === charUuid.toLowerCase()) {
           this.activeCharacteristic = c.rawChar;
-          this.log('INFO', '', `Caratteristica attiva cambiata manualmente a: ${charUuid}`);
+          this.log('INFO', '', `Caratteristica attiva cambiata a: ${charUuid}`);
           return true;
         }
       }
@@ -228,10 +300,45 @@ export class BLEManager {
     this.activeService = null;
     this.activeCharacteristic = null;
     this.setStatus('disconnected', 'Dispositivo disconnesso.');
-    this.log('INFO', '', 'Evento gattserverdisconnected ricevuto.');
+    this.log('INFO', '', 'Dispositivo disconnesso.');
+
+    // Avvia il watchdog di riconnessione automatica (se non disconnesso manualmente)
+    if (!this.userExplicitDisconnect && this.autoReconnectEnabled && this.device) {
+      this._scheduleReconnect();
+    }
+  }
+
+  _scheduleReconnect() {
+    this._stopReconnectWatchdog();
+    this.isReconnecting = true;
+    this.setStatus('connecting', `Riconnessione automatica a ${this.device.name || 'LED'}...`);
+    this.log('INFO', '', 'Watchdog: tentativo di riconnessione automatica tra 3 secondi...');
+
+    this.reconnectTimer = setTimeout(async () => {
+      try {
+        if (this.device && !this.isConnected && !this.userExplicitDisconnect) {
+          await this.connect();
+          this.isReconnecting = false;
+        }
+      } catch (_) {
+        if (!this.userExplicitDisconnect) {
+          this._scheduleReconnect();
+        }
+      }
+    }, 3200);
+  }
+
+  _stopReconnectWatchdog() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.isReconnecting = false;
   }
 
   async disconnect() {
+    this.userExplicitDisconnect = true;
+    this._stopReconnectWatchdog();
     if (this.device && this.device.gatt.connected) {
       this.device.gatt.disconnect();
     }
@@ -239,21 +346,18 @@ export class BLEManager {
   }
 
   /**
-   * Invio con rate-limiting per evitare buffer overflow BLE durante movimenti slider rapidi
+   * Invio pacchetto con rate-limiting protetto
    */
   async sendPacket(uint8Bytes, immediate = false) {
     if (!this.isConnected || !this.activeCharacteristic) {
-      this.log('ERROR', '', 'Tentativo di invio senza connessione BLE attiva o caratteristica non pronta.');
-      throw new Error('Nessuna connessione BLE attiva');
+      return;
     }
 
     if (immediate) {
       return this._executeWrite(uint8Bytes);
     }
 
-    // Rate limiter: memorizza l'ultimo pacchetto
     this.sendQueue = uint8Bytes;
-
     const now = Date.now();
     const elapsed = now - this.lastSendTime;
 
@@ -283,10 +387,7 @@ export class BLEManager {
     const hex = Array.from(uint8Bytes).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
 
     try {
-      // Determina il metodo di scrittura
       const supportsNoResp = char.properties && char.properties.writeWithoutResponse;
-      const supportsWithResp = char.properties && char.properties.write;
-
       const useNoResponse = (this.writeMode === 'withoutResponse') ||
         (this.writeMode === 'auto' && (supportsNoResp || typeof char.writeValueWithoutResponse === 'function'));
 
@@ -297,18 +398,13 @@ export class BLEManager {
         await char.writeValueWithResponse(uint8Bytes);
         this.log('TX', hex, `(${uint8Bytes.length} bytes, writeWithResponse)`);
       } else if (typeof char.writeValue === 'function') {
-        // Fallback per standard Web Bluetooth precedente
         await char.writeValue(uint8Bytes);
         this.log('TX', hex, `(${uint8Bytes.length} bytes, writeValue standard)`);
-      } else {
-        throw new Error('Nessun metodo di scrittura supportato sulla caratteristica selezionata');
       }
     } catch (err) {
       this.log('ERROR', hex, `Invio fallito: ${err.message}`);
-      throw err;
     } finally {
       this.isTransmitting = false;
-      // Se c'è ancora un pacchetto in coda arrivato mentre trasmetteva, invialo
       if (this.sendQueue) {
         setTimeout(() => this._flushQueue(), this.options.throttleIntervalMs);
       }

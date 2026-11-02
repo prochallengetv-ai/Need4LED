@@ -1,8 +1,8 @@
 /**
  * Need4Led — UI Controller
- * Gestione degli elementi visivi, feedback tattile/visivo, navigazione a schede,
- * calibrazione pinout hardware, modalità Massimo Bianco, effetti dinamici (Polizia Blu & Rosso)
- * e salvataggio preset personalizzati in localStorage.
+ * Gestione interfaccia, navigazione a schede, auto-associazione dispositivo all'avvio,
+ * watchdog riconnessione, profili cromatici per dispositivo, calibrazione pinout automatica
+ * e modalità dinamiche ad alta precisione (Polizia Blu & Rosso puro a doppio burst).
  */
 
 import { Protocols, getEncoder, hexToBytes, bytesToHex, remapColorChannels } from './protocols.js';
@@ -13,8 +13,11 @@ export class UIController {
     this.currentProtocol = Protocols.LOTUS_STANDARD;
     this.encoder = getEncoder(this.currentProtocol);
 
-    // Calibrazione Pinout Hardware (salvata in localStorage)
-    this.channelOrder = localStorage.getItem('need4led_channel_order') || 'RGB';
+    // Canale attivo per il dispositivo connesso (default su BRG per controller ELK)
+    this.channelOrder = localStorage.getItem('need4led_channel_order') || 'BRG';
+
+    // Dispositivo attivo
+    this.currentDeviceId = localStorage.getItem('need4led_last_device_id') || null;
 
     // Stato illuminazione corrente
     this.state = {
@@ -28,7 +31,7 @@ export class UIController {
     // Gestione Effetti Dinamici
     this.activeEffect = null;
     this.effectTimer = null;
-    this.effectSpeed = 80; // da 10 a 100
+    this.effectSpeed = 80;
 
     // Preset Personalizzati
     this.customPresets = this._loadCustomPresets();
@@ -37,6 +40,9 @@ export class UIController {
     this._attachEvents();
     this._renderCustomPresets();
     this._initChannelOrderUI();
+
+    // Tenta l'auto-associazione immediata all'avvio dell'app
+    this._initAutoConnect();
   }
 
   _bindElements() {
@@ -80,6 +86,7 @@ export class UIController {
     this.btnStopEffect = document.getElementById('btnStopEffect');
     this.speedSlider = document.getElementById('speedSlider');
     this.speedValBadge = document.getElementById('speedValBadge');
+    this.btnFixBrg = document.getElementById('btnFixBrg');
 
     // Tab 3: Colori & Calibrazione
     this.colorHexText = document.getElementById('colorHexText');
@@ -94,9 +101,15 @@ export class UIController {
     this.valB = document.getElementById('valB');
     this.badgeCurrentOrder = document.getElementById('badgeCurrentOrder');
     this.selectChannelOrder = document.getElementById('selectChannelOrder');
+    this.deviceProfileName = document.getElementById('deviceProfileName');
     this.btnTestRed = document.getElementById('btnTestRed');
     this.btnTestGreen = document.getElementById('btnTestGreen');
     this.btnTestBlue = document.getElementById('btnTestBlue');
+
+    // Bottoni Wizard Visivo (Cosa vedi sul veicolo?)
+    this.btnSawRed = document.getElementById('btnSawRed');
+    this.btnSawGreen = document.getElementById('btnSawGreen');
+    this.btnSawBlue = document.getElementById('btnSawBlue');
 
     // Tab 4: I Miei Preset
     this.btnOpenSavePresetModal = document.getElementById('btnOpenSavePresetModal');
@@ -107,7 +120,6 @@ export class UIController {
     this.newPresetSummary = document.getElementById('newPresetSummary');
     this.btnConfirmSavePreset = document.getElementById('btnConfirmSavePreset');
     this.customPresetsContainer = document.getElementById('customPresetsContainer');
-    this.emptyPresetsPlaceholder = document.getElementById('emptyPresetsPlaceholder');
 
     // Drawer Diagnostica
     this.diagDrawer = document.getElementById('diagDrawer');
@@ -120,6 +132,16 @@ export class UIController {
     this.btnSendRawHex = document.getElementById('btnSendRawHex');
     this.termWindow = document.getElementById('termWindow');
     this.btnClearLog = document.getElementById('btnClearLog');
+  }
+
+  async _initAutoConnect() {
+    // Prova ad agganciarsi automaticamente al monopattino senza richiedere tap
+    setTimeout(async () => {
+      const autoConnected = await this.ble.tryAutoConnect();
+      if (autoConnected) {
+        this.showToast('⚡ Connesso automaticamente al tuo veicolo!');
+      }
+    }, 400);
   }
 
   _attachEvents() {
@@ -144,7 +166,6 @@ export class UIController {
       });
     });
 
-    // Pulsante rapido Calibrazione in Header
     this.btnOpenCalib.addEventListener('click', () => {
       this.switchTab('tab-color');
       const calibCard = document.querySelector('.calibration-card');
@@ -188,13 +209,26 @@ export class UIController {
       else if (this.effectSpeed <= 30) speedLabel = 'Lento / Relax';
       this.speedValBadge.textContent = `${speedLabel} (${this.effectSpeed}%)`;
 
-      // Invia anche al chip ELK
       if (this.ble.isConnected && typeof this.encoder.speed === 'function') {
         try {
           this.ble.sendPacket(this.encoder.speed(this.effectSpeed));
         } catch (_) {}
       }
     });
+
+    // Correzione a 1 tocco: Fix per Polizia Blu & Giallo ➔ Rosso & Blu
+    if (this.btnFixBrg) {
+      this.btnFixBrg.addEventListener('click', () => {
+        this.setChannelOrder('BRG');
+        this.showToast('✅ Calibrazione BRG applicata! Modalità Polizia impostata su Rosso & Blu puro.', 4000);
+        // Riavvia effetto polizia se era attivo
+        if (this.activeEffect === 'police') {
+          this.startDynamicEffect('police');
+        } else {
+          this.sendColorCommand(255, 0, 0);
+        }
+      });
+    }
 
     // Native Color Input
     this.nativeColorInput.addEventListener('input', (e) => {
@@ -219,34 +253,56 @@ export class UIController {
     this.sliderG.addEventListener('input', handleRgbChange);
     this.sliderB.addEventListener('input', handleRgbChange);
 
-    // Calibrazione Pinout Hardware
+    // Selettore Ordine Canali Manuale
     this.selectChannelOrder.addEventListener('change', (e) => {
-      this.channelOrder = e.target.value;
-      localStorage.setItem('need4led_channel_order', this.channelOrder);
-      this.badgeCurrentOrder.textContent = `ORDINE: ${this.channelOrder}`;
-      this.showToast(`Calibrazione salvata: ${this.channelOrder}`);
-      this.ble.log('INFO', '', `Ordine pinout aggiornato a: ${this.channelOrder}`);
-      // Rimanda il colore attuale con il nuovo ordine
-      this.sendColorCommand(this.state.r, this.state.g, this.state.b);
+      this.setChannelOrder(e.target.value);
     });
 
+    // Test Canali Singoli
     this.btnTestRed.addEventListener('click', () => {
       this.vibrate(20);
-      this.showToast('Test Canale Rosso');
+      this.showToast('Invio comando ROSSO puro...');
       this.sendColorCommand(255, 0, 0);
     });
 
     this.btnTestGreen.addEventListener('click', () => {
       this.vibrate(20);
-      this.showToast('Test Canale Verde');
+      this.showToast('Invio comando VERDE puro...');
       this.sendColorCommand(0, 255, 0);
     });
 
     this.btnTestBlue.addEventListener('click', () => {
       this.vibrate(20);
-      this.showToast('Test Canale Blu');
+      this.showToast('Invio comando BLU puro...');
       this.sendColorCommand(0, 0, 255);
     });
+
+    // Wizard di Risoluzione Automatica: "Ho premuto Test Rosso, e sul veicolo..."
+    if (this.btnSawRed) {
+      this.btnSawRed.addEventListener('click', () => {
+        // Se vede già rosso, l'attuale ordine o RGB è corretto
+        this.setChannelOrder(this.channelOrder);
+        this.showToast('✅ Perfetto! Canale Rosso confermato corretto.');
+      });
+    }
+
+    if (this.btnSawGreen) {
+      this.btnSawGreen.addEventListener('click', () => {
+        // Se premendo Rosso si accende Verde, i pin 1 e 2 sono invertiti -> GRB!
+        this.setChannelOrder('GRB');
+        this.showToast('🎯 Auto-calibrato su GRB! Ora il Rosso corrisponde al Rosso reale.');
+        this.sendColorCommand(255, 0, 0);
+      });
+    }
+
+    if (this.btnSawBlue) {
+      this.btnSawBlue.addEventListener('click', () => {
+        // Se premendo Rosso si accende Blu, il primo pin è il Blu -> BRG!
+        this.setChannelOrder('BRG');
+        this.showToast('🎯 Auto-calibrato su BRG! Risolto errore Blu/Giallo: ora Rosso e Blu sono perfetti.');
+        this.sendColorCommand(255, 0, 0);
+      });
+    }
 
     // Preset Personalizzati
     this.btnOpenSavePresetModal.addEventListener('click', () => {
@@ -285,17 +341,16 @@ export class UIController {
       }
     });
 
-    // Cambio Protocollo BLE
     this.selectProtocol.addEventListener('change', (e) => {
       this.currentProtocol = e.target.value;
       this.encoder = getEncoder(this.currentProtocol);
-      this.ble.log('INFO', '', `Protocollo attivo modificato in: ${this.currentProtocol}`);
+      this.ble.log('INFO', '', `Protocollo attivo: ${this.currentProtocol}`);
       this.showToast(`Protocollo: ${e.target.selectedOptions[0].text}`);
+      this._saveCurrentDeviceProfile();
     });
 
     this.selectWriteMode.addEventListener('change', (e) => {
       this.ble.writeMode = e.target.value;
-      this.ble.log('INFO', '', `Modalità scrittura impostata su: ${this.ble.writeMode}`);
       this.showToast(`Scrittura: ${this.ble.writeMode}`);
     });
 
@@ -317,6 +372,15 @@ export class UIController {
     });
   }
 
+  setChannelOrder(newOrder) {
+    this.channelOrder = newOrder;
+    localStorage.setItem('need4led_channel_order', newOrder);
+    this._initChannelOrderUI();
+    this._saveCurrentDeviceProfile();
+    this.ble.log('INFO', '', `Calibrazione pinout impostata su: ${newOrder}`);
+    this.sendColorCommand(this.state.r, this.state.g, this.state.b);
+  }
+
   _initChannelOrderUI() {
     if (this.selectChannelOrder) {
       this.selectChannelOrder.value = this.channelOrder;
@@ -324,6 +388,50 @@ export class UIController {
     if (this.badgeCurrentOrder) {
       this.badgeCurrentOrder.textContent = `ORDINE: ${this.channelOrder}`;
     }
+  }
+
+  _saveCurrentDeviceProfile() {
+    if (!this.currentDeviceId) return;
+    const profile = {
+      channelOrder: this.channelOrder,
+      protocol: this.currentProtocol,
+      updatedAt: Date.now()
+    };
+    localStorage.setItem(`need4led_dev_${this.currentDeviceId}`, JSON.stringify(profile));
+  }
+
+  _loadDeviceProfile(device) {
+    this.currentDeviceId = device.id;
+    if (this.deviceProfileName) {
+      this.deviceProfileName.textContent = device.name || 'LED Controller';
+    }
+
+    try {
+      const savedProfileStr = localStorage.getItem(`need4led_dev_${device.id}`);
+      if (savedProfileStr) {
+        const profile = JSON.parse(savedProfileStr);
+        if (profile.channelOrder) {
+          this.channelOrder = profile.channelOrder;
+        }
+        if (profile.protocol) {
+          this.currentProtocol = profile.protocol;
+          this.encoder = getEncoder(this.currentProtocol);
+          if (this.selectProtocol) this.selectProtocol.value = this.currentProtocol;
+        }
+        this.ble.log('INFO', '', `Profilo hardware caricato per ${device.name}: Ordine ${this.channelOrder}`);
+      } else {
+        // Nessun profilo precedente per questo dispositivo:
+        // Se il dispositivo è ELK-BLEDOM, impostiamo automaticamente BRG
+        const devName = (device.name || '').toUpperCase();
+        if (devName.includes('ELK') || devName.includes('LOTUS') || devName.includes('LED')) {
+          this.channelOrder = 'BRG';
+          this.ble.log('INFO', '', `Rilevato chip ${device.name}: applicata auto-calibrazione BRG.`);
+        }
+        this._saveCurrentDeviceProfile();
+      }
+    } catch (_) {}
+
+    this._initChannelOrderUI();
   }
 
   switchTab(tabId) {
@@ -351,7 +459,7 @@ export class UIController {
     }
   }
 
-  showToast(message, durationMs = 2400) {
+  showToast(message, durationMs = 2600) {
     this.toastNotice.textContent = message;
     this.toastNotice.classList.add('visible');
     clearTimeout(this._toastTimer);
@@ -399,25 +507,18 @@ export class UIController {
     }
   }
 
-  // ===================================================================
-  // MASSIMO BIANCO ELK-BLEDOM (Potenza Massima Lumen)
-  // ===================================================================
   async applyMaxWhite(shade = 'full') {
     this.vibrate(30);
     this.stopDynamicEffect();
 
-    // Imposta 100% luminosità
     this.state.brightness = 100;
     this.brightnessSlider.value = 100;
     this.brightnessValBadge.textContent = '100%';
 
     try {
-      // 1. Invia Brightness 100%
       await this.ble.sendPacket(this.encoder.brightness(100), true);
 
-      // 2. Invia comando specifico per la tonalità
       if (shade === 'full') {
-        // RGB 255/255/255 + Comando Grayscale ELK
         this.updateColorValues(255, 255, 255, true);
         if (typeof this.encoder.whiteGrayscale === 'function') {
           setTimeout(() => {
@@ -426,7 +527,6 @@ export class UIController {
         }
         this.showToast('⚡ Massimo Bianco 100% (Lumen Pieni)');
       } else if (shade === 'cold') {
-        // 6500K Freddo
         this.updateColorValues(220, 240, 255, true);
         if (typeof this.encoder.whiteCold === 'function') {
           setTimeout(() => {
@@ -435,11 +535,9 @@ export class UIController {
         }
         this.showToast('❄️ Bianco Freddo 6500K');
       } else if (shade === 'pure') {
-        // Puro RGB
         this.updateColorValues(255, 255, 255, true);
         this.showToast('☀️ Bianco Puro 100% RGB');
       } else if (shade === 'warm') {
-        // 3200K Caldo
         this.updateColorValues(255, 215, 150, true);
         if (typeof this.encoder.whiteWarm === 'function') {
           setTimeout(() => {
@@ -456,7 +554,7 @@ export class UIController {
   }
 
   // ===================================================================
-  // EFFETTI DINAMICI & STROBO (Polizia Blu & Rosso, Strobo, ecc.)
+  // MODALITÀ DINAMICHE: Polizia Blu & Rosso (Doppio Burst Pulito)
   // ===================================================================
   startDynamicEffect(effectName) {
     this.vibrate(25);
@@ -468,7 +566,6 @@ export class UIController {
     this.activeEffectIndicator.style.color = 'var(--neon-cyan)';
     this.effectControlBar.style.display = 'flex';
 
-    // Evidenzia la card selezionata
     this.effectCards.forEach(c => {
       if (c.getAttribute('data-effect') === effectName) {
         c.classList.add('active-running');
@@ -477,42 +574,58 @@ export class UIController {
       }
     });
 
-    // Invia velocità al controller
     if (this.ble.isConnected && typeof this.encoder.speed === 'function') {
       try {
         this.ble.sendPacket(this.encoder.speed(this.effectSpeed));
       } catch (_) {}
     }
 
-    // Calcolo periodo ciclo (ms) basato su effectSpeed (10..100)
-    // Più veloce = tempo ciclo più breve (es: da 500ms a 110ms)
     const getInterval = () => Math.round(520 - (this.effectSpeed * 4.1));
 
     switch (effectName) {
       case 'police': {
-        // 🚨 POLIZIA: BLU E ROSSO LAMPEGGIANTE ALTERNATO
-        this.effectActiveNameText.textContent = '🚨 Polizia: Blu & Rosso Strobo';
-        this.showToast('Modalità Polizia Attivata!');
-        let step = 0;
-        const policeLoop = () => {
+        // 🚨 POLIZIA: ROSSO E BLU PURO AD ALTA CADENZA (Doppio Burst Stroboscopico)
+        this.effectActiveNameText.textContent = '🚨 Polizia: Rosso & Blu Strobo';
+        this.showToast('Modalità Polizia Attivata (Rosso & Blu Puro)');
+
+        // Sequenza a 8 fasi: 2 flash Rosso -> Pausa -> 2 flash Blu -> Pausa
+        let burstStep = 0;
+        const policeCadence = () => {
           if (this.activeEffect !== 'police') return;
-          // Sequenza pattern strobo: Rosso, Rosso, Blu, Blu
-          if (step % 4 === 0 || step % 4 === 1) {
-            this.sendColorCommand(255, 0, 0); // Rosso
-            this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 69, 58, 0.35) 0%, rgba(0, 0, 0, 0) 70%)';
-          } else {
-            this.sendColorCommand(0, 50, 255); // Blu profondo
-            this.ambientTop.style.background = 'radial-gradient(circle, rgba(10, 132, 255, 0.35) 0%, rgba(0, 0, 0, 0) 70%)';
+
+          const phase = burstStep % 8;
+          let delay = Math.max(70, Math.round(getInterval() * 0.45));
+
+          if (phase === 0 || phase === 2) {
+            // Flash ROSSO PURO (Zero verde, zero residui)
+            this.sendColorCommand(255, 0, 0);
+            this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 59, 48, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
+          } else if (phase === 1 || phase === 3) {
+            // Pausa buio tra i flash rossi
+            this.sendColorCommand(0, 0, 0);
+            this.ambientTop.style.background = 'none';
+          } else if (phase === 4 || phase === 6) {
+            // Flash BLU PURO (Zero verde, zero rosso)
+            this.sendColorCommand(0, 0, 255);
+            this.ambientTop.style.background = 'radial-gradient(circle, rgba(10, 132, 255, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
+          } else if (phase === 5 || phase === 7) {
+            // Pausa buio tra i flash blu
+            this.sendColorCommand(0, 0, 0);
+            this.ambientTop.style.background = 'none';
+            if (phase === 7) {
+              delay = Math.round(delay * 1.8); // Pausa più lunga prima di ripetere il ciclo
+            }
           }
-          step++;
-          this.effectTimer = setTimeout(policeLoop, getInterval());
+
+          burstStep++;
+          this.effectTimer = setTimeout(policeCadence, delay);
         };
-        policeLoop();
+
+        policeCadence();
         break;
       }
 
       case 'white_strobe': {
-        // ⚡ STROBO NOTTE BIANCO
         this.effectActiveNameText.textContent = '⚡ Strobo Notte Bianco';
         this.showToast('Strobo Notturno Attivato');
         let on = false;
@@ -521,19 +634,18 @@ export class UIController {
           on = !on;
           if (on) {
             this.sendColorCommand(255, 255, 255);
-            this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(0, 0, 0, 0) 70%)';
+            this.ambientTop.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 0.45) 0%, rgba(0, 0, 0, 0) 70%)';
           } else {
             this.sendColorCommand(0, 0, 0);
             this.ambientTop.style.background = 'none';
           }
-          this.effectTimer = setTimeout(strobeLoop, Math.max(90, Math.round(getInterval() * 0.85)));
+          this.effectTimer = setTimeout(strobeLoop, Math.max(80, Math.round(getInterval() * 0.75)));
         };
         strobeLoop();
         break;
       }
 
       case 'rainbow': {
-        // 🌈 FLUSSO ARCOBALENO
         this.effectActiveNameText.textContent = '🌈 Flusso Arcobaleno Dinamico';
         this.showToast('Arcobaleno Dinamico');
         let hue = 0;
@@ -550,15 +662,13 @@ export class UIController {
       }
 
       case 'cyber_breath': {
-        // 💜 RESPIRO CYBERPUNK (Ciano & Viola)
         this.effectActiveNameText.textContent = '💜 Respiro Cyberpunk (Ciano / Viola)';
         this.showToast('Respiro Cyberpunk');
         let t = 0;
         const cyberLoop = () => {
           if (this.activeEffect !== 'cyber_breath') return;
           t += 0.2;
-          const blend = (Math.sin(t) + 1) / 2; // 0..1
-          // Interpola tra #00F0FF (0, 240, 255) e #BF5AF2 (191, 90, 242)
+          const blend = (Math.sin(t) + 1) / 2;
           const r = Math.round(0 * (1 - blend) + 191 * blend);
           const g = Math.round(240 * (1 - blend) + 90 * blend);
           const b = Math.round(255 * (1 - blend) + 242 * blend);
@@ -571,7 +681,6 @@ export class UIController {
       }
 
       case 'amber_hazard': {
-        // ⚠️ HAZARD FENDINEBBIA
         this.effectActiveNameText.textContent = '⚠️ Hazard Fendinebbia';
         this.showToast('Hazard Fendinebbia Attivato');
         let amberOn = false;
@@ -592,11 +701,10 @@ export class UIController {
       }
 
       case 'party_flash': {
-        // 🎉 PARTY STROBE
         this.effectActiveNameText.textContent = '🎉 Party Strobe';
         this.showToast('Party Strobe Attivato');
         const colors = [
-          [255, 0, 0], [0, 255, 0], [0, 100, 255],
+          [255, 0, 0], [0, 255, 0], [0, 0, 255],
           [255, 255, 0], [0, 255, 255], [255, 0, 255]
         ];
         let idx = 0;
@@ -662,7 +770,7 @@ export class UIController {
         break;
       case 'green':
         this.state.brightness = 85;
-        this.updateColorValues(48, 209, 88, true);
+        this.updateColorValues(0, 255, 0, true);
         this.showToast('Preset: Eco Verde');
         break;
     }
@@ -701,7 +809,6 @@ export class UIController {
   sendColorCommand(r, g, b) {
     if (!this.ble.isConnected) return;
     try {
-      // Invia applicando la calibrazione dell'ordine canali hardware
       const packet = this.encoder.color(r, g, b, this.channelOrder);
       this.ble.sendPacket(packet);
     } catch (_) {}
@@ -716,7 +823,7 @@ export class UIController {
   }
 
   // ===================================================================
-  // GESTIONE PRESET PERSONALIZZATI (localStorage)
+  // PRESET PERSONALIZZATI
   // ===================================================================
   _loadCustomPresets() {
     try {
@@ -724,7 +831,6 @@ export class UIController {
       if (saved) return JSON.parse(saved);
     } catch (_) {}
 
-    // Preset predefiniti carini iniziali
     return [
       { id: 'p_neon', name: 'Sottoscocca Cyber', r: 0, g: 240, b: 255, brightness: 100 },
       { id: 'p_sunset', name: 'Tramonto Notturno', r: 255, g: 60, b: 120, brightness: 90 },
@@ -790,7 +896,6 @@ export class UIController {
         <button class="btn-delete-preset" title="Elimina Preset" aria-label="Elimina">✕</button>
       `;
 
-      // Clic su card per applicare preset
       card.querySelector('.custom-preset-left').addEventListener('click', () => {
         this.vibrate(20);
         this.stopDynamicEffect();
@@ -802,7 +907,6 @@ export class UIController {
         this.showToast(`Attivato: ${preset.name}`);
       });
 
-      // Clic su elimina
       card.querySelector('.btn-delete-preset').addEventListener('click', (e) => {
         e.stopPropagation();
         this.deleteCustomPreset(preset.id);
@@ -812,7 +916,6 @@ export class UIController {
     });
   }
 
-  // Utilità HSL to RGB per l'arcobaleno continuo
   _hslToRgb(h, s, l) {
     let r, g, b;
     if (s === 0) {
@@ -848,6 +951,10 @@ export class UIController {
       this.showToast(`Errore hex: ${err.message}`, 3000);
       this.ble.log('ERROR', rawStr, err.message);
     }
+  }
+
+  onDevicePaired(device) {
+    this._loadDeviceProfile(device);
   }
 
   onBleStatusChange({ state, message }) {
