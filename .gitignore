@@ -1,0 +1,7 @@
+# Antigravity Agent Local Workspace
+.agent/
+.system_generated/
+*.log
+node_modules/
+.DS_Store
+Thumbs.db

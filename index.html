@@ -25,21 +25,25 @@
   <!-- Viewport Applicazione (Safe-Area Aware) -->
   <main class="app-viewport">
     
-    <!-- Header Superiore -->
+    <!-- Header Superiore (Senza dicitura PRO) -->
     <header class="app-header">
-      <div style="display: flex; align-items: baseline;">
+      <div class="brand-container">
+        <span class="brand-icon">🛴</span>
         <h1 class="brand-title">Need4Led</h1>
-        <span class="brand-badge">PRO</span>
       </div>
       <div class="header-actions">
-        <!-- Pulsante Apri Diagnostica & Protocolli -->
+        <!-- Pulsante Calibrazione Rapida Canali -->
+        <button class="btn-icon-glass" id="btnOpenCalib" title="Calibrazione Colori Hardware" aria-label="Calibrazione Colori">
+          🎯
+        </button>
+        <!-- Pulsante Diagnostica BLE & Protocolli -->
         <button class="btn-icon-glass" id="btnOpenDiag" title="Diagnostica BLE & Protocolli" aria-label="Diagnostica BLE">
           ⚡
         </button>
       </div>
     </header>
 
-    <!-- Sezione Connessione Bluetooth -->
+    <!-- Barra Stato Connessione & Pairing Bluetooth -->
     <section class="glass-card connection-panel">
       <div class="status-row">
         <div class="status-badge" id="statusBadge">
@@ -55,125 +59,342 @@
       </button>
     </section>
 
-    <!-- Sezione Alimentazione (ACCENDI / SPEGNI) -->
+    <!-- Master Power Switches (ACCENDI / SPEGNI) -->
     <section class="power-grid">
       <button class="btn-power btn-power-on" id="btnPowerOn" aria-label="Accendi Luci">
-        <span class="power-label" style="color: var(--neon-green);">ACCENDI</span>
+        <span class="power-icon">⏻</span>
+        <span class="power-label">ACCENDI</span>
         <span class="power-sub">Luci ON</span>
       </button>
       <button class="btn-power btn-power-off" id="btnPowerOff" aria-label="Spegni Luci">
-        <span class="power-label" style="color: var(--neon-red);">SPEGNI</span>
+        <span class="power-icon">⏼</span>
+        <span class="power-label">SPEGNI</span>
         <span class="power-sub">Luci OFF</span>
       </button>
     </section>
 
-    <!-- Sezione Presets Rapidi (Sicurezza / Strada / Stile) -->
-    <section class="glass-card">
+    <!-- Card Massimo Bianco ELK-BLEDOM (Potenza Massima Lumen) -->
+    <section class="glass-card max-white-card">
       <div class="control-section-title">
-        <span>Preset Rapidi Monopattino</span>
-        <span style="font-size: 11px; color: var(--text-tertiary);">1-TOCCO</span>
+        <span class="title-with-icon">💡 <strong>Massimo Bianco</strong> (ELK Power)</span>
+        <span class="badge-pill">MAX LUMEN</span>
       </div>
+      <p class="section-desc">Eroga la massima emissione luminosa per visibilità notturna su strada.</p>
+      
+      <button class="btn-max-white-primary" id="btnMaxWhiteFull">
+        <span>⚡ ACCENDI MASSIMO BIANCO 100%</span>
+      </button>
 
-      <div class="presets-grid">
-        <!-- Preset Strada Bianco -->
-        <button class="preset-btn preset-white" data-preset="white">
-          <div class="preset-swatch"></div>
-          <div class="preset-info">
-            <span class="preset-name">Strada</span>
-            <span class="preset-desc">Bianco Visibilità</span>
-          </div>
+      <!-- Tonalità di Bianco ELK -->
+      <div class="white-shades-grid">
+        <button class="btn-shade-white" id="btnWhiteCold" data-white="cold">
+          <span class="shade-dot shade-cold"></span>
+          <span>Freddo 6500K</span>
         </button>
-
-        <!-- Preset Stop Rosso -->
-        <button class="preset-btn preset-red" data-preset="red">
-          <div class="preset-swatch"></div>
-          <div class="preset-info">
-            <span class="preset-name">Stop</span>
-            <span class="preset-desc">Rosso Sicurezza</span>
-          </div>
+        <button class="btn-shade-white" id="btnWhitePure" data-white="pure">
+          <span class="shade-dot shade-pure"></span>
+          <span>Puro 100% RGB</span>
         </button>
-
-        <!-- Preset Cyber Ciano -->
-        <button class="preset-btn preset-cyan" data-preset="cyan">
-          <div class="preset-swatch"></div>
-          <div class="preset-info">
-            <span class="preset-name">Cyber Ciano</span>
-            <span class="preset-desc">Neon Futuristico</span>
-          </div>
-        </button>
-
-        <!-- Preset Neon Viola -->
-        <button class="preset-btn preset-purple" data-preset="purple">
-          <div class="preset-swatch"></div>
-          <div class="preset-info">
-            <span class="preset-name">Neon Viola</span>
-            <span class="preset-desc">Stile Notturno</span>
-          </div>
-        </button>
-
-        <!-- Preset Ambra Sicurezza -->
-        <button class="preset-btn preset-amber" data-preset="amber" style="grid-column: span 2;">
-          <div class="preset-swatch"></div>
-          <div class="preset-info">
-            <span class="preset-name">Ambra Sicurezza</span>
-            <span class="preset-desc">Attenzione / Nebbia / Pioggia</span>
-          </div>
+        <button class="btn-shade-white" id="btnWhiteWarm" data-white="warm">
+          <span class="shade-dot shade-warm"></span>
+          <span>Caldo 3200K</span>
         </button>
       </div>
     </section>
 
-    <!-- Sezione Regolazione Luminosità -->
-    <section class="glass-card">
-      <div class="control-section-title">
-        <span>Luminosità Striscia</span>
-        <span class="control-val-badge" id="brightnessValBadge">100%</span>
-      </div>
+    <!-- Navigazione a Segmenti (Tab Dashboard) -->
+    <nav class="nav-segmented" role="tablist">
+      <button class="segment-btn active" data-tab="tab-quick" role="tab">🏎️ Rapido</button>
+      <button class="segment-btn" data-tab="tab-dynamics" role="tab">🚨 Dinamici & Strobo</button>
+      <button class="segment-btn" data-tab="tab-color" role="tab">🎨 Colori</button>
+      <button class="segment-btn" data-tab="tab-custom" role="tab">⭐ I Miei Preset</button>
+    </nav>
 
-      <div class="slider-container">
-        <span class="slider-icon">☼</span>
-        <input type="range" min="0" max="100" value="100" class="ios-slider" id="brightnessSlider" aria-label="Slider Luminosità">
-        <span class="slider-icon" style="font-size: 20px;">☀</span>
-      </div>
-    </section>
+    <!-- =================================================================== -->
+    <!-- TAB 1: RAPIDO & GUIDA MONOPATTINO -->
+    <!-- =================================================================== -->
+    <div class="tab-panel active" id="tab-quick">
+      <!-- Regolazione Luminosità Rapida -->
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>Luminosità Striscia</span>
+          <span class="control-val-badge" id="brightnessValBadge">100%</span>
+        </div>
+        <div class="slider-container">
+          <span class="slider-icon">☼</span>
+          <input type="range" min="0" max="100" value="100" class="ios-slider" id="brightnessSlider" aria-label="Slider Luminosità">
+          <span class="slider-icon" style="font-size: 20px;">☀</span>
+        </div>
+      </section>
 
-    <!-- Sezione Colore RGB Personalizzato -->
-    <section class="glass-card">
-      <div class="control-section-title">
-        <span>Tonalità & Colore RGB</span>
-        <span class="color-hex-label" id="colorHexText">#00F0FF</span>
-      </div>
+      <!-- Preset Rapidi di Guida -->
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>Preset di Guida Rapidi</span>
+          <span class="badge-pill">1-TOCCO</span>
+        </div>
 
-      <div class="color-preview-bar">
-        <div class="color-indicator-circle" id="colorIndicatorCircle"></div>
-        <div style="flex: 1; margin-left: 8px;">
-          <div style="font-size: 13px; font-weight: 700;">Tonalità Attiva</div>
-          <div style="font-size: 11px; color: var(--text-tertiary);" id="rgbSummaryText">R: 0 | G: 240 | B: 255</div>
-        </div>
-        <label class="native-color-picker-btn">
-          <span>Palette</span>
-          <input type="color" id="nativeColorInput" value="#00F0FF">
-        </label>
-      </div>
+        <div class="presets-grid">
+          <button class="preset-btn preset-white" data-preset="white">
+            <div class="preset-swatch"></div>
+            <div class="preset-info">
+              <span class="preset-name">Strada</span>
+              <span class="preset-desc">Bianco Visibilità</span>
+            </div>
+          </button>
 
-      <!-- Canali RGB Individuali per Regolazione Fine -->
-      <div class="rgb-channels-grid">
-        <div class="channel-row">
-          <span class="channel-label r">R</span>
-          <input type="range" min="0" max="255" value="0" class="channel-slider" id="sliderR">
-          <span class="channel-val" id="valR">0</span>
+          <button class="preset-btn preset-red" data-preset="red">
+            <div class="preset-swatch"></div>
+            <div class="preset-info">
+              <span class="preset-name">Stop</span>
+              <span class="preset-desc">Rosso Sicurezza</span>
+            </div>
+          </button>
+
+          <button class="preset-btn preset-cyan" data-preset="cyan">
+            <div class="preset-swatch"></div>
+            <div class="preset-info">
+              <span class="preset-name">Cyber Ciano</span>
+              <span class="preset-desc">Neon Futuristico</span>
+            </div>
+          </button>
+
+          <button class="preset-btn preset-purple" data-preset="purple">
+            <div class="preset-swatch"></div>
+            <div class="preset-info">
+              <span class="preset-name">Neon Viola</span>
+              <span class="preset-desc">Stile Notturno</span>
+            </div>
+          </button>
+
+          <button class="preset-btn preset-amber" data-preset="amber">
+            <div class="preset-swatch"></div>
+            <div class="preset-info">
+              <span class="preset-name">Ambra Fendinebbia</span>
+              <span class="preset-desc">Attenzione / Pioggia</span>
+            </div>
+          </button>
+
+          <button class="preset-btn preset-green" data-preset="green">
+            <div class="preset-swatch"></div>
+            <div class="preset-info">
+              <span class="preset-name">Eco Verde</span>
+              <span class="preset-desc">Cruising Relax</span>
+            </div>
+          </button>
         </div>
-        <div class="channel-row">
-          <span class="channel-label g">G</span>
-          <input type="range" min="0" max="255" value="240" class="channel-slider" id="sliderG">
-          <span class="channel-val" id="valG">240</span>
+      </section>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: MODALITÀ DINAMICHE & STROBO (Polizia Blu & Rosso, ecc.) -->
+    <!-- =================================================================== -->
+    <div class="tab-panel" id="tab-dynamics">
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>Effetti Dinamici & Lampeggianti</span>
+          <span class="badge-pill active-mode-indicator" id="activeEffectIndicator">STATICO</span>
         </div>
-        <div class="channel-row">
-          <span class="channel-label b">B</span>
-          <input type="range" min="0" max="255" value="255" class="channel-slider" id="sliderB">
-          <span class="channel-val" id="valB">255</span>
+        <p class="section-desc">Animazioni ad alta visibilità per eventi, stile e segnalazione.</p>
+
+        <!-- Griglia Effetti Dinamici -->
+        <div class="effects-grid">
+          
+          <!-- POLIZIA: BLU E ROSSO LAMPEGGIANTE (Richiesta Utente) -->
+          <button class="effect-card effect-police" id="btnEffectPolice" data-effect="police">
+            <div class="effect-preview-badge police-badge">
+              <span class="dot-red"></span>
+              <span class="dot-blue"></span>
+            </div>
+            <div class="effect-details">
+              <span class="effect-title">🚨 Polizia (Blu & Rosso)</span>
+              <span class="effect-desc">Lampeggio strobo alternato ad alta intensità</span>
+            </div>
+          </button>
+
+          <!-- STROBO BIANCO SICUREZZA -->
+          <button class="effect-card effect-white-strobe" data-effect="white_strobe">
+            <div class="effect-preview-badge strobe-badge">⚡⚡</div>
+            <div class="effect-details">
+              <span class="effect-title">⚡ Strobo Notte Bianco</span>
+              <span class="effect-desc">Lampeggio rapido per incroci al buio</span>
+            </div>
+          </button>
+
+          <!-- ARCOBALENO DINAMICO -->
+          <button class="effect-card effect-rainbow" data-effect="rainbow">
+            <div class="effect-preview-badge rainbow-badge">🌈</div>
+            <div class="effect-details">
+              <span class="effect-title">🌈 Flusso Arcobaleno</span>
+              <span class="effect-desc">Ciclo cromatico continuo sfumato</span>
+            </div>
+          </button>
+
+          <!-- RESPIRO CYBERPUNK (CIANO / VIOLA) -->
+          <button class="effect-card effect-cyber" data-effect="cyber_breath">
+            <div class="effect-preview-badge cyber-badge">💠</div>
+            <div class="effect-details">
+              <span class="effect-title">💜 Respiro Cyberpunk</span>
+              <span class="effect-desc">Pulsazione morbida Ciano &amp; Viola neon</span>
+            </div>
+          </button>
+
+          <!-- AMBRA EMERGENZA (HAZARD) -->
+          <button class="effect-card effect-hazard" data-effect="amber_hazard">
+            <div class="effect-preview-badge hazard-badge">⚠️</div>
+            <div class="effect-details">
+              <span class="effect-title">⚠️ Hazard Fendinebbia</span>
+              <span class="effect-desc">Lampeggio intermittente di emergenza</span>
+            </div>
+          </button>
+
+          <!-- MULTICOLOR PARTY FLASH -->
+          <button class="effect-card effect-party" data-effect="party_flash">
+            <div class="effect-preview-badge party-badge">🎉</div>
+            <div class="effect-details">
+              <span class="effect-title">🎉 Party Strobe</span>
+              <span class="effect-desc">Scatto stroboscopico multicolore</span>
+            </div>
+          </button>
+
         </div>
-      </div>
-    </section>
+
+        <!-- Barra di Controllo Effetto Attivo (Pulsante Stop) -->
+        <div class="effect-control-bar" id="effectControlBar" style="display: none;">
+          <div class="effect-active-name" id="effectActiveNameText">Animazione in corso...</div>
+          <button class="btn-stop-effect" id="btnStopEffect">Ferma Effetto ⏹</button>
+        </div>
+
+        <!-- Slider Velocità Effetto -->
+        <div class="speed-control-section">
+          <div class="control-section-title">
+            <span>Velocità / Frequenza Effetto</span>
+            <span class="control-val-badge" id="speedValBadge">Veloce (80%)</span>
+          </div>
+          <div class="slider-container">
+            <span class="slider-icon">🐢</span>
+            <input type="range" min="10" max="100" value="80" class="ios-slider" id="speedSlider" aria-label="Velocità Effetto">
+            <span class="slider-icon">⚡</span>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: COLORI & CALIBRAZIONE HARDWARE PINOUT -->
+    <!-- =================================================================== -->
+    <div class="tab-panel" id="tab-color">
+      
+      <!-- Sezione Colore RGB Attivo -->
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>Tonalità & Colore Attivo</span>
+          <span class="color-hex-label" id="colorHexText">#00F0FF</span>
+        </div>
+
+        <div class="color-preview-bar">
+          <div class="color-indicator-circle" id="colorIndicatorCircle"></div>
+          <div style="flex: 1; margin-left: 8px;">
+            <div style="font-size: 13px; font-weight: 700;">Colore Selezionato</div>
+            <div style="font-size: 11px; color: var(--text-tertiary);" id="rgbSummaryText">R: 0 | G: 240 | B: 255</div>
+          </div>
+          <label class="native-color-picker-btn">
+            <span>Palette</span>
+            <input type="color" id="nativeColorInput" value="#00F0FF">
+          </label>
+        </div>
+
+        <!-- Canali RGB Individuali -->
+        <div class="rgb-channels-grid">
+          <div class="channel-row">
+            <span class="channel-label r">R</span>
+            <input type="range" min="0" max="255" value="0" class="channel-slider" id="sliderR">
+            <span class="channel-val" id="valR">0</span>
+          </div>
+          <div class="channel-row">
+            <span class="channel-label g">G</span>
+            <input type="range" min="0" max="255" value="240" class="channel-slider" id="sliderG">
+            <span class="channel-val" id="valG">240</span>
+          </div>
+          <div class="channel-row">
+            <span class="channel-label b">B</span>
+            <input type="range" min="0" max="255" value="255" class="channel-slider" id="sliderB">
+            <span class="channel-val" id="valB">255</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD CALIBRAZIONE ORDINE CANALI FISICI (Risolve corrispondenza colori) -->
+      <section class="glass-card calibration-card">
+        <div class="control-section-title">
+          <span class="title-with-icon">🎯 <strong>Calibrazione Colore Reale</strong></span>
+          <span class="badge-pill" id="badgeCurrentOrder">ORDINE: RGB</span>
+        </div>
+        <p class="section-desc">
+          Se premendo <strong>Rosso</strong> la tua striscia si accende di <strong>Verde</strong> o <strong>Blu</strong>, i pin fisici della tua striscia usano un ordine diverso. Esegui il test qui sotto e seleziona la combinazione esatta:
+        </p>
+
+        <!-- Test Rapido Canali -->
+        <div class="test-channels-row">
+          <button class="btn-test-ch btn-test-r" id="btnTestRed">🔴 Test Rosso</button>
+          <button class="btn-test-ch btn-test-g" id="btnTestGreen">🟢 Test Verde</button>
+          <button class="btn-test-ch btn-test-b" id="btnTestBlue">🔵 Test Blu</button>
+        </div>
+
+        <!-- Selettore Ordine Canali -->
+        <div class="diag-field-group" style="margin-top: 8px;">
+          <label class="diag-field-label" for="selectChannelOrder">Seleziona Ordine Pinout Hardware</label>
+          <select class="diag-select" id="selectChannelOrder">
+            <option value="RGB" selected>RGB — Standard</option>
+            <option value="GRB">GRB — Molto diffuso su controller cinesi (Verde/Rosso invertiti)</option>
+            <option value="BRG">BRG — Diffuso su strisce aftermarket</option>
+            <option value="BGR">BGR — Blu e Rosso invertiti</option>
+            <option value="RBG">RBG — Rosso, Blu, Verde</option>
+            <option value="GBR">GBR — Verde, Blu, Rosso</option>
+          </select>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: I MIEI PRESET PERSONALIZZATI (Crea & Salva) -->
+    <!-- =================================================================== -->
+    <div class="tab-panel" id="tab-custom">
+      <section class="glass-card">
+        <div class="control-section-title">
+          <span>I Miei Preset Personalizzati</span>
+          <button class="btn-pill-accent" id="btnOpenSavePresetModal">+ Salva Corrente</button>
+        </div>
+        <p class="section-desc">Salva qualsiasi combinazione di colore e luminosità per richiamarla con un tocco.</p>
+
+        <!-- Modale / Box Creazione Nuovo Preset -->
+        <div class="create-preset-box" id="createPresetBox" style="display: none;">
+          <div class="create-preset-header">
+            <span>Nuovo Preset da Salvare</span>
+            <button class="btn-icon-subtle" id="btnClosePresetBox">✕</button>
+          </div>
+          <div class="create-preset-row">
+            <div class="preset-preview-circle" id="newPresetColorPreview"></div>
+            <input type="text" class="diag-input" id="inputPresetName" placeholder="Nome preset (es. Notte Sport)" maxlength="24">
+          </div>
+          <div class="create-preset-actions">
+            <span style="font-size: 11px; color: var(--text-tertiary);" id="newPresetSummary">100% Lum | #00F0FF</span>
+            <button class="btn-save-confirm" id="btnConfirmSavePreset">Salva Preset</button>
+          </div>
+        </div>
+
+        <!-- Griglia Preset Salvati -->
+        <div class="custom-presets-grid" id="customPresetsContainer">
+          <!-- Popolato dinamicamente da localStorage -->
+          <div class="empty-presets-placeholder" id="emptyPresetsPlaceholder">
+            <em>Nessun preset salvato finora. Imposta il colore e clicca "+ Salva Corrente".</em>
+          </div>
+        </div>
+
+      </section>
+    </div>
 
   </main>
 

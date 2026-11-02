@@ -1,0 +1,12 @@
+{
+  "name": "need4led",
+  "version": "1.0.0",
+  "description": "Need4Led — App di controllo Bluetooth Low Energy per strisce LED su monopattino elettrico",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/protocol-test.js"
+  },
+  "keywords": ["ble", "lotuslantern", "web-bluetooth", "liquid-glass", "scooter", "need4led"],
+  "author": "Need4Led Team",
+  "license": "MIT"
+}

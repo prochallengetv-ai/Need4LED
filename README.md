@@ -1,25 +1,43 @@
-2. Apri **Need4LED** in Bluefy.
-3. Premi **"Connetti Strisce LED"**.
-4. Nella finestra di dialogo Bluetooth, seleziona il dispositivo del controller (spesso denominato `ELK-BLEDOM`, `LotusLantern`, `LED...`, oppure con una stringa generica).
-5. Una volta connesso:
-   - Apri il cassetto di diagnostica premendo il pulsante **⚡** in alto a destra.
-   - Osserva la sezione **GATT Explorer**: vedrai i servizi e le caratteristiche scoperte (es. `0000fff0...` e `0000fff3...`).
-   - Chiudi la diagnostica e premi **ACCENDI** o **Strada (Bianco)**.
-6. **Se la striscia risponde immediatamente:** il protocollo standard LotusLantern è confermato!
-7. **Se la striscia non risponde:**
-   - Riapri ** Diagnostica**.
-   - Nel menu *Protocollo*, seleziona **LotusLantern Variante 2 (Index 0x04)** oppure **Triones / HappyLighting**.
-   - Nel menu *Modalità di Scrittura*, prova ad alternare tra **Auto** e **Forza writeWithoutResponse**.
-   - Il terminale live mostrerà esattamente i byte trasmessi (`TX ➔`) e qualsiasi risposta o errore.
+# Need4Led 🛴⚡
+**Web Bluetooth App ad alte prestazioni in stile Cockpit Liquid Glass per il controllo delle strisce LED Bluetooth (ELK-BLEDOM / LotusLantern) su monopattino elettrico.**
+
+Sviluppata interamente su PC Windows per l'utilizzo su iPhone tramite il browser **Bluefy**, senza necessità di Mac o abbonamenti a pagamento.
+
 ---
-##  Esecuzione dei Test Unitari
-Per verificare l'integrità dei frame esadecimali e prevenire regressioni sul codice:
-```powershell
-npm test
-```
-I test controllano la corrispondenza esatta dei byte, i delimitatori `0x7E` e `0xEF`, gli offset di colore RGB e le conversioni di luminosità.
+
+## 🚀 Novità Versione 2.0
+
+1. **Massimo Bianco ELK-BLEDOM (Potenza Massima Lumen):**
+   - Eroga contemporaneamente la saturazione RGB completa `(255, 255, 255)`, il livello di luminosità al 100% (`0x64`) e il comando hardware di modalità scala di grigi/bianco puro `7E 00 03 00 01 00 00 00 EF`.
+   - Selettori rapidi per **Freddo 6500K** (massima visibilità notturna), **Puro 100%** e **Caldo 3200K**.
+2. **Corrispondenza Esatta dei Colori (Calibrazione Pinout Hardware):**
+   - Se premendo *Rosso* la striscia fisica si accendeva di *Verde* o *Blu*, il motivo era la sequenza interna dei pin della striscia (spesso `GRB` o `BRG` sui controller cinesi).
+   - È stata aggiunta una sezione con **Pulsanti di Test Rapido** (🔴 Test Rosso, 🟢 Test Verde, 🔵 Test Blu) e un selettore istantaneo di ordine pin (`RGB`, `GRB`, `BRG`, `BGR`, `RBG`, `GBR`) che viene memorizzato permanentemente.
+3. **Modalità Dinamiche & Lampeggianti (Polizia Blu & Rosso):**
+   - 🚨 **Polizia (Blu & Rosso Lampeggiante):** Strobo alternato ad alta intensità.
+   - ⚡ **Strobo Notte Bianco:** Lampeggio ad alta frequenza per attraversamenti e incroci bui.
+   - 🌈 **Flusso Arcobaleno:** Ciclo cromatico continuo sfumato.
+   - 💜 **Respiro Cyberpunk:** Pulsazione sfumata tra Ciano e Viola neon.
+   - ⚠️ **Hazard Fendinebbia:** Lampeggio intermittente ambra per pioggia e nebbia.
+   - 🎉 **Party Strobe:** Scatto stroboscopico multicolore rapido.
+   - Controllo velocità di frequenza regolabile con slider.
+4. **I Miei Preset Personalizzati (Crea & Salva):**
+   - Pulsante `+ Salva Corrente` per memorizzare qualsiasi combinazione di colore e luminosità assegnandole un nome personalizzato.
+   - I preset vengono salvati nella memoria del telefono (`localStorage`) e restano sempre disponibili con attivazione a 1 tocco e pulsante di cancellazione `✕`.
+5. **Nuova Interfaccia Cockpit Professionale:**
+   - Navigazione a segmenti: **🏎️ Rapido**, **🚨 Dinamici & Strobo**, **🎨 Colori**, **⭐ I Miei Preset**.
+   - Design Liquid Glass ad altissimo contrasto su nero OLED puro (`#000000`).
+   - Rimossa ogni dicitura "PRO": l'app si chiama ufficialmente **Need4Led**.
+
 ---
-##  Linee Guida di Sicurezza alla Guida
-- Non utilizzare i controlli complessi (slider RGB) mentre il monopattino è in movimento.
-- Usa esclusivamente i preset fisici a grande impatto visivo (**Strada** per illuminazione anteriore, **Stop** per visibilità/freno).
-- Fissa saldamente l'iPhone al manubrio con un supporto antivibrazioni.
+
+## 📁 File da Aggiornare sul tuo GitHub
+
+Per applicare le modifiche su GitHub Pages, trascina dal tuo PC (cartella `C:\Users\thoma\.gemini\antigravity\scratch\need4led`):
+- `index.html`
+- `sw.js`
+- `manifest.json`
+- la cartella `css` (con dentro `style.css`)
+- la cartella `js` (con dentro i 4 file aggiornati)
+
+Fai il **Commit changes** su GitHub. Entro 60 secondi il sito sarà aggiornato e su iPhone (in Bluefy) basterà ricaricare la pagina per avere la nuova versione!
